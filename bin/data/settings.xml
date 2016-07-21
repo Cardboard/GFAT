@@ -1,0 +1,18 @@
+<group>
+	<rutford_plus_95_deluxe/>
+	<component>MAG</component>
+	<time>1</time>
+	<show_all_tracks>1</show_all_tracks>
+	<hide_active_tracks>0</hide_active_tracks>
+	<inferred_ENU>
+		<east_>0.453910</east_>
+		<north_>-0.937014</north_>
+		<up_>0.007760</up_>
+	</inferred_ENU>
+	<available_tracks>
+		<track_1>1</track_1>
+		<track_2>1</track_2>
+		<track_3>1</track_3>
+	</available_tracks>
+<group/>
+</group>
