@@ -146,12 +146,12 @@ void WormMan::refreshWorms(bool respawn) // removes or updates current worms wit
         if (worms.size() != 0) {
             worms.clear();
         }
-        if (mode == 1) {
+        if (mode == 1 && worm_density != 0.0f) {
             // create worms based on the density property
-            for (int i = 0; i < width + pos.x; i+=2 * (1/0.2) * worm_size) {
-                for (int j = 0; j < height + pos.y; j+=2 * (1/0.2) * worm_size) {
+            for (int j = pos.y; j < height + pos.y; j+=2 * (1/worm_density+0.05) * worm_size) {
+                for (int i = pos.x; i < width + pos.x; i+=2 * (1/worm_density+0.05) * worm_size) {
                     // TODO spawn worms either uniformly or only somewhat uniformly
-                    if (worm_uniform == true) { // false) { // somewhat uniform placement
+                    if (worm_uniform == false) { // false) { // somewhat uniform placement
                         createWorm((float) i + rand() % (worm_size * 4) + (worm_size * 2), (float) j + rand() % (worm_size * 4) + (worm_size * 2));
                     } else { // uniform placement
                         createWorm((float) i, (float) j);

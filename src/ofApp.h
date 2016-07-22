@@ -25,6 +25,10 @@ public:
     void draw();
 
     void setupGui();
+    void setup3dTopo();
+    void setViewportSizes();
+    void drawViewportOutline(const ofRectangle & viewport);
+
 
     void keyPressed(int key);
     void keyReleased(int key);
@@ -39,23 +43,21 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
 
-    // listeners
-    void timeChanged(int &time);
-    void toggleTrack(const void *sender, bool &pressed);
-    void changedEuler(bool &b);
-    void changedOpaque(bool &b);
-    void changedWormLength(int &length);
-    void changedWormLifespan(int &lifespan);
-    void changedWormDensity(float &density);
-    void changedWormSize(int &size);
-    void changedWormSpeed(int &speed);
-    void changedEulerArrows(bool &b);
-    void changedUniformPlacement(bool &b);
-
     //
     ofVec2f posToScaledPos(ofVec2f pt);
     ofVec2f scaledPosToPos(ofVec2f pt);
     bool isPointInRect(ofVec2f checkpt, ofVec2f pt, float w, float h);
+
+    ofRectangle vMap;
+    ofRectangle v3d;
+    ofRectangle vModel;
+    ofRectangle vPairspace;
+    ofRectangle vHistory;
+
+    ofCamera cam;
+    float extrusionAmount;
+    ofVboMesh topo3d;
+    ofTexture topo3dtex;
 
     //
 
@@ -91,6 +93,7 @@ public:
 
     // GUI
     ofxDatGui* gui;
+    ofxDatGuiSlider* timeslider;
     ofxDatGui* gOptions;
     ofxDatGuiFolder* gMapLayers;
     ofxDatGuiFolder* gMapWorms;

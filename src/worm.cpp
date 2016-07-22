@@ -56,13 +56,15 @@ void Worm::drawArrow(ofVec2f offset)
 
 void Worm::draw(ofVec2f offset)
 {
-    // make the worms look like chain-chomp on leashes perhaps?
+    // make the worms look like chain-chomps on leashes perhaps?
+    /*
     if (mode == 1 && alpha == 255.0) {
         age = 255.0; // keeps worms from dying
         ofSetLineWidth(1);
         ofSetColor(30, 30, 30, 250);
         ofDrawLine(startx + offset.x, starty + offset.y, x + offset.x, y + offset.y);
     }
+    */
 
     if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
         ofSetColor(color.red, color.green, color.blue, 0);// , 0.0);

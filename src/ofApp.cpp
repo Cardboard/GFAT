@@ -9,10 +9,10 @@ void ofApp::setup(){
     // setup byte array
     SAMPLES = 3686;
     LINES = 1520;
-    SCALE = 4;
+    SCALE = 2;
     WIDTH = SAMPLES / SCALE;
     HEIGHT = LINES / SCALE;
-    position.set(0, 200);
+    position.set(0, 0);
 
     // TODO replace with a Time Manager class thing
     time = new float;
@@ -52,10 +52,10 @@ void ofApp::setup(){
 
     CM.setCurrentComponent("MAG");
 
-    // setup worm manager
+    // setup worm manager & set default vis
     WM.setup(CM, "E", "N", position);
-    WM.setWormDensity(3.0);
-    WM.setWormLifespan(100);
+    WM.setWormDensity(0.5);
+    WM.setWormLifespan(0);
     WM.setWormTailSize(100);
     WM.setWormSize(3);
     WM.setWormSpeed(30);
@@ -63,10 +63,10 @@ void ofApp::setup(){
     WM.setOpaque(false);
     WM.setMode(0);
     WM.setArrowMode(0);
-    WM.worms.clear();
+    //WM.worms.clear();
 
     // handle topography
-    img_topo.load("topo_test.png");
+    img_topo.load("shaded_height.png");
     img_topo.resize(WIDTH, HEIGHT);
     img_gdop.load("gdop_test.png");
     img_gdop.resize(WIDTH, HEIGHT);
@@ -100,6 +100,10 @@ void ofApp::setup(){
     active_tracks.resize(tracks.size()+1, 0);
 
     setupGui();
+    setup3dTopo();
+
+    // temporary(?) viewport stuff
+    setViewportSizes();
 }
 
 //--------------------------------------------------------------
@@ -118,6 +122,42 @@ void ofApp::update(){
 
     if (show_worms)
         WM.updateWorms(&CM, *time);
+
+    // point the camera at the 3d topography
+    float rotateAmount = ofMap(ofGetMouseX(), 0, ofGetWidth(), 0, 360);
+    ofVec3f camDirection(0, 1, 1);
+    ofVec3f centre(946/2.f, 1558/2.f, 255/2.f);
+    ofVec3f camDirectionRotated = camDirection.getRotated(rotateAmount, ofVec3f(0, 0, 1));
+    ofVec3f camPosition = centre + camDirectionRotated * 1000.0;
+
+    cam.setPosition(camPosition);
+    cam.lookAt(centre);
+    cam.roll(rotateAmount);
+
+}
+
+void ofApp::setViewportSizes(){
+    float w = ofGetWindowWidth();
+    float h = ofGetWindowHeight();
+    /*
+    vMap.x = 0;
+    vMap.y = 0;
+    vMap.width = w * 2/3;
+    vMap.height = h / 2;
+    v3d.x = w * 2/3;
+    v3d.y = 0;
+    v3d.width = w * 1/3;
+    v3d.height = h / 2;
+    */
+    // debugging 3d viewport
+    vMap.x = 0;
+    vMap.y = 0;
+    vMap.width = 0;
+    vMap.height = 0;
+    v3d.x = 0;
+    v3d.y = 0;
+    v3d.width = w;
+    v3d.height = h;
 }
 
 //--------------------------------------------------------------
@@ -125,8 +165,10 @@ void ofApp::setupGui(){
     // GUI
     gui = new ofxDatGui(ofxDatGuiAnchor::TOP_LEFT);
     gui->addFRM(1.0f);
-    ofxDatGuiSlider* timeslider = gui->addSlider("Time", 0, 24*45);
+    ofxDatGui* gTimeGui = new ofxDatGui(ofxDatGuiAnchor::BOTTOM_LEFT);
+    timeslider = gTimeGui->addSlider("Time", 0, 24*45);
     timeslider->bind(*time);
+    timeslider->setWidth(ofGetWindowWidth(), 0.05);
     // layers -- gui elements
     gMapLayers = gui->addFolder("Layers", ofColor::aliceBlue);
     gMapLayers->collapse();
@@ -249,16 +291,19 @@ void ofApp::setupGui(){
     });
 
     // setup separate options gui for adjusting worms
-    gOptions = new ofxDatGui(ofxDatGuiAnchor::BOTTOM_LEFT);
+    gOptions = new ofxDatGui(ofxDatGuiAnchor::TOP_RIGHT);
     gOptions->addHeader(":: Drag Me To Reposition ::");
     ofxDatGuiSlider* wormsize = gOptions->addSlider("   Size", 1, 10);
+    wormsize->setPrecision(0);
     wormsize->setValue(WM.worm_size);
     ofxDatGuiSlider* wormdensity = gOptions->addSlider("   Density", 0.0f, 1.0f);
     wormdensity->setValue(WM.worm_density);
     // weird behavior occurs when tail length is 1 for some reason
     ofxDatGuiSlider* wormlength = gOptions->addSlider("   Tail Length", 2, 500);
+    wormlength->setPrecision(0);
     wormlength->setValue(WM.worm_tailsize);
     ofxDatGuiSlider* wormlifespan = gOptions->addSlider("   Lifespan", 50, 500);
+    wormlifespan->setPrecision(0);
     wormlifespan->setValue(WM.worm_lifespan);
     ofxDatGuiToggle* wormopaque = gOptions->addToggle("   Opaque", false);
     wormopaque->setChecked(WM.worm_opaque);
@@ -285,8 +330,50 @@ void ofApp::setupGui(){
     });
 }
 
+void ofApp::setup3dTopo(){
+    extrusionAmount = 1.0;
+    ofImage heightmap;
+    heightmap.load("rutford_surface.png");
+    // texture
+    ofImage topo3dteximg;
+    topo3dteximg.load("rutford_tex.png");
+    topo3dtex = topo3dteximg.getTexture();
+    //topo3dtex.setTextureWrap(GL_REPEAT, GL_REPEAT);
+    float h = heightmap.getHeight();
+    float w = heightmap.getWidth();
+    float px_height, px_color;
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            px_height = max(0.0f, heightmap.getColor(x, y).getBrightness());
+            px_color = min(255.f, 4 * px_height);
+            topo3d.addVertex(ofPoint(x, y, px_height * extrusionAmount));
+            topo3d.addColor(ofColor(px_color));
+            topo3d.addTexCoord(ofVec2f(x, y));
+        }
+    }
+    for (int y = 0; y < h-1; y++){
+        for (int x=0; x < w-1; x++){
+            topo3d.addIndex(x+y*w);               // 0
+            topo3d.addIndex((x+1)+y*w);           // 1
+            topo3d.addIndex(x+(y+1)*w);           // 10
+
+            topo3d.addIndex((x+1)+y*w);           // 1
+            topo3d.addIndex((x+1)+(y+1)*w);       // 11
+            topo3d.addIndex(x+(y+1)*w);           // 10
+        }
+    }
+
+    cam.setScale(1, -1, 1);
+}
+
 //--------------------------------------------------------------
 void ofApp::draw(){
+    // ========= 2D WORMPLOT ========
+    drawViewportOutline(vMap);
+    ofPushView();
+    ofViewport(vMap);
+    ofSetupScreen();
+
     if (show_heightmap)
         // TODO delete magic no.
         img_topo.draw(position.x, position.y);
@@ -300,7 +387,6 @@ void ofApp::draw(){
     if (show_worms)
         WM.drawWorms();
 
-
     if (show_tracks) {
         vector<Track>::iterator it, end;
         active_tracks.clear();
@@ -309,7 +395,30 @@ void ofApp::draw(){
                 it->setPos(position);
         }
     }
+    ofPopView(); // done drawing to 2d wormplit viewport
+
+    // ========= 3D WORMPLOT ========
+    ofEnableDepthTest();
+    cam.begin(v3d);
+        topo3dtex.bind();
+        topo3d.draw();
+        topo3dtex.unbind();
+    cam.end();
 }
+
+void ofApp::drawViewportOutline(const ofRectangle & viewport){
+    ofPushStyle();
+    ofFill();
+    ofSetColor(30);
+    ofSetLineWidth(0);
+    ofDrawRectangle(viewport);
+    ofNoFill();
+    ofSetColor(20);
+    ofSetLineWidth(1.0f);
+    ofDrawRectangle(viewport);
+    ofPopStyle();
+}
+
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
@@ -331,15 +440,30 @@ void ofApp::mouseDragged(int x, int y, int button){
     ofVec2f pt;
     pt.set(x, y);
     // drag the map with the right mouse button
-    if (button == 2) {
-        if (isPointInRect(pt, position, WIDTH, HEIGHT)) {
-            float m_dx = ofGetMouseX() - ofGetPreviousMouseX();
-            float m_dy = ofGetMouseY() - ofGetPreviousMouseY();
-            position.x += m_dx;
-            position.y += m_dy;
-            CM.setPos(position);
-            WM.pos.set(position);
+    if (button == 2 && isPointInRect(pt, vMap.position, vMap.width, vMap.height)) {
+        float m_dx = ofGetMouseX() - ofGetPreviousMouseX();
+        float m_dy = ofGetMouseY() - ofGetPreviousMouseY();
+        position.x += m_dx;
+        position.y += m_dy;
+        // restrain the map to the viewport's edges
+        if (WIDTH > vMap.width) {
+            if (position.x > vMap.x) position.x = vMap.x;
+            if (position.x + WIDTH < vMap.width) position.x = vMap.width - WIDTH;
+        } else {
+            // map is smaller than the viewport so keep it within the bounds now
+            if (position.x < vMap.x) position.x = vMap.x;
+            if (position.x + WIDTH > vMap.width) position.x = vMap.width - WIDTH;
         }
+        if (HEIGHT > vMap.height) {
+            if (position.y > vMap.y) position.y = vMap.y;
+            if (position.y + HEIGHT < vMap.height) position.y = vMap.height - HEIGHT;
+        } else {
+            // map is smaller than the viewport so keep it within the bounds now
+            if (position.y < vMap.y) position.y = vMap.y;
+            if (position.y + HEIGHT > vMap.height) position.y = vMap.height - HEIGHT;
+        }
+        CM.setPos(position);
+        WM.pos.set(position);
 
         // move tracks
         vector<Track>::iterator it, end;
@@ -349,32 +473,33 @@ void ofApp::mouseDragged(int x, int y, int button){
                 it->setPos(position);
         }
     // drag to create a line or whatever of worms
-    } else if (button == 0) {
-        WM.createWorm(x, y);
+    } else if (button == 0 && isPointInRect(pt, vMap.position, vMap.width, vMap.height)) {
+        WM.createWorm(x - vMap.x, y - vMap.y);
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    if (show_worms)
-        WM.createWorm(x, y);
-    CM.checkClicks(x, y);
+    if (button == 0) {
+        if (show_worms)
+            WM.createWorm(x, y);
+        CM.checkClicks(x, y);
 
-    // get new set of active tracks depending on the mouse click location
-    vector<Track>::iterator it, end;
+        // get new set of active tracks depending on the mouse click location
+        vector<Track>::iterator it, end;
 
-    for (it = tracks.begin(), end = tracks.end(); it != end; it++) {
-        if (it->isClickInTrack(x, y) == true) {// && gui_tracks.getToggle("track " + to_string(it->trackno))) {
-            active_tracks[it->trackno] = 1;
-        } else {
-            active_tracks[it->trackno] = 0;
+        for (it = tracks.begin(), end = tracks.end(); it != end; it++) {
+            if (it->isClickInTrack(x, y) == true) {// && gui_tracks.getToggle("track " + to_string(it->trackno))) {
+                active_tracks[it->trackno] = 1;
+            } else {
+                active_tracks[it->trackno] = 0;
+            }
         }
     }
 
 }
 
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY){
-    cout << scrollX << endl;
 }
 
 
@@ -395,7 +520,10 @@ void ofApp::mouseExited(int x, int y){
 
 //--------------------------------------------------------------
 void ofApp::windowResized(int w, int h){
-
+    // resize the global timeline
+    timeslider->setWidth(ofGetWindowWidth(), 0.05);
+    // resize all of the viewports
+    setViewportSizes();
 }
 
 //--------------------------------------------------------------
@@ -425,70 +553,4 @@ bool ofApp::isPointInRect(ofVec2f checkpt, ofVec2f pt, float w, float h){
         return true;
     }
     return false;
-}
-
-//------------------------GUI-LISTENERS-------------------------
-void ofApp::timeChanged(int &t){
-    //newtime = t;
-    //time = t;
-
-    // TODO wth is the below code for anymore
-    if (CM.current.comp.click_i_x != -1 && CM.current.comp.click_i_y != -1) {
-    }
-    //CM.setCurrentComponent(t);
-    //WM.updateComponents(CM);
-}
-
-//--------------------------------------------------------------
-void ofApp::changedEuler(bool &b){
-    if (b == true) {
-        WM.setMode(1);
-        WM.refreshWorms(true);
-    } else {
-        WM.setMode(0);
-        WM.worms.clear();
-    }
-}
-
-void ofApp::changedOpaque(bool &b){
-    WM.setOpaque(b);
-}
-
-//--------------------------------------------------------------
-void ofApp::changedWormLength(int &length){
-    WM.setWormTailSize(length);
-}
-
-//--------------------------------------------------------------
-void ofApp::changedWormLifespan(int &lifespan){
-    WM.setWormLifespan(lifespan);
-}
-
-//--------------------------------------------------------------
-void ofApp::changedWormDensity(float &density){
-    WM.setWormDensity(density);
-}
-
-//--------------------------------------------------------------
-void ofApp::changedWormSize(int &size){
-    WM.setWormSize(size);
-}
-
-//--------------------------------------------------------------
-void ofApp::changedWormSpeed(int &speed){
-    WM.setWormSpeed(speed);
-}
-
-//--------------------------------------------------------------
-void ofApp::changedEulerArrows(bool &b){
-    if (b == true) {
-        WM.setArrowMode(1);
-    } else {
-        WM.setArrowMode(0);
-    }
-}
-
-//--------------------------------------------------------------
-void ofApp::changedUniformPlacement(bool &b){
-    WM.setUniform(b);
 }
