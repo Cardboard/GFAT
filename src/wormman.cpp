@@ -11,21 +11,22 @@ WormMan::~WormMan()
 
 }
 
-void WormMan::setup(CompMan cm, string hname, string vname, ofVec2f p)
+void WormMan::setup(CompMan* compman, string hname, string vname, ofVec2f p)
 {
     horizontalName = hname;
     verticalName = vname;
     // NOTE: the assumption is made that the components are of the same size and have
     // the same range of usable data
-    horizontalComponent = cm.getComponent(hname);
-    verticalComponent = cm.getComponent(vname);
+    cm = compman;
+    horizontalComponent = cm->getComponent(hname);
+    verticalComponent = cm->getComponent(vname);
 
-    width = cm.width;
-    height = cm.height;
-    samples = cm.samples;
-    lines = cm.lines;
+    width = cm->width;
+    height = cm->height;
+    samples = cm->samples;
+    lines = cm->lines;
     scale = horizontalComponent.comp.scale;
-    pos.set(p);
+    pos.set(ofVec2f(0, 0));
 
     mode = 0;
     colormode = 0;
@@ -48,7 +49,7 @@ void WormMan::setup(CompMan cm, string hname, string vname, ofVec2f p)
     // and also get the range from which we can draw pixels
     for (int i = 0; i < lines; i++) {
         for (int j = 0; j < samples; j++) {
-            float val = cm.current.comp.array[i][j];
+            float val = cm->current.comp.array[i][j];
             if (!isnan(val)) {
                 array[i][j] = 1;
                 if (spawn_x == -1 || j < spawn_x) spawn_x = j;
@@ -148,8 +149,8 @@ void WormMan::refreshWorms(bool respawn) // removes or updates current worms wit
         }
         if (mode == 1 && worm_density != 0.0f) {
             // create worms based on the density property
-            for (int j = pos.y; j < height + pos.y; j+=2 * (1/worm_density+0.05) * worm_size) {
-                for (int i = pos.x; i < width + pos.x; i+=2 * (1/worm_density+0.05) * worm_size) {
+            for (int j = 0; j < height; j+=2 * (1/worm_density+0.05) * worm_size) {
+                for (int i = 0; i < width; i+=2 * (1/worm_density+0.05) * worm_size) {
                     // TODO spawn worms either uniformly or only somewhat uniformly
                     if (worm_uniform == false) { // false) { // somewhat uniform placement
                         createWorm((float) i + rand() % (worm_size * 4) + (worm_size * 2), (float) j + rand() % (worm_size * 4) + (worm_size * 2));
@@ -169,12 +170,16 @@ void WormMan::refreshWorms(bool respawn) // removes or updates current worms wit
             // back of the tail drawn first so the order of drawing is better
             for (w = it->begin(); w != it->end(); w++) {
                 w->mode = mode;
-                w->lifespan = worm_lifespan;
+                float hmag = sqrt(w->enu.east*w->enu.east + w->enu.north*w->enu.north);
+                float proportional_lifespan = max(0.f, (float) worm_lifespan - hmag * (worm_lifespan));
+                w->lifespan = proportional_lifespan;
                 w->size = worm_size;
                 w->scaled_size = worm_size * w->alpha / 255.0;
                 w->opaque = worm_opaque;
                 w->colormode = colormode;
-                //w->startenu = w->enu;
+                w->startenu.east = 9999.0;
+                w->startenu.north = 9999.0;
+                w->startenu.up = 9999.0;
             }
         }
     }
@@ -198,10 +203,17 @@ void WormMan::createWorm()
         // add a bunch of worms to the wormgroup
         for (int i = 0; i < worm_tailsize; i++) {
             Worm newWorm;
-            newWorm.setup(mode, worm_lifespan, scaledx, scaledy, worm_size);
+            // TODO solve the following at the current time, rather than at time 0.f,
+            // although for the purpose of making worms' lifespans inversely proportional
+            // to their velocity, this should suffice
+            ENU e = cm->solveEquation(ofVec2f(scaledx, scaledy), 0.f);
+            float hmag = sqrt(e.east*e.east + e.north*e.north);
+            float proportional_lifespan = max(0.f, (float) worm_lifespan - hmag * (worm_lifespan));
+            newWorm.setup(mode, proportional_lifespan, scaledx, scaledy, worm_size);
             double scaled_alpha = ((double) i / ((worm_tailsize - 0.0) / (1.0 - 0.0))) + 0.0;
+            //newWorm.setENU(e);
             newWorm.alpha = 255.0 - 255.0*scaled_alpha;
-            newWorm.alpha *= newWorm.alpha / 255.0;
+            //newWorm.alpha *= newWorm.alpha / 255.0;
             newWorm.scaled_size = worm_size * newWorm.alpha / 255.0;
             newWorm.opaque = worm_opaque;
             newWorm.colormode = colormode;
@@ -215,21 +227,28 @@ void WormMan::createWorm()
 // create worm at mouse
 void WormMan::createWorm(float mx, float my)
 {
-    if (mx > spawn_x/scale + pos.x && mx < spawn_xrange/scale + pos.x && my > spawn_y/scale + pos.y && my < spawn_yrange/scale + pos.y) {
+    if (mx > spawn_x/scale && mx < spawn_xrange/scale && my > spawn_y/scale && my < spawn_yrange/scale) {
         // convert unscaled position to scaled position
-        float scaledx = (mx - pos.x) * scale;
-        float scaledy = (my - pos.y) * scale;
+        float scaledx = (mx) * scale;
+        float scaledy = (my) * scale;
 
         // only create a worm if it will be on the map
         if (array[scaledy][scaledx] == 1) {
             vector<Worm> newWormGroup;
             // add a bunch of worms to the wormgroup
             for (int i = 0; i < worm_tailsize; i++) {
-                Worm newWorm;               
-                newWorm.setup(mode, worm_lifespan, mx - pos.x, my - pos.y, 2);
+                Worm newWorm;
+                // TODO solve the following at the current time, rather than at time 0.f,
+                // although for the purpose of making worms' lifespans inversely proportional
+                // to their velocity, this should suffice
+                ENU e = cm->solveEquation(ofVec2f(mx, my), 0.f);
+                float hmag = sqrt(e.east*e.east + e.north*e.north);
+                float proportional_lifespan = max(0.f, (float) worm_lifespan - hmag * (worm_lifespan));
+                newWorm.setup(mode, (int) proportional_lifespan, mx, my, 2);
+                //newWorm.setENU(e);
                 double scaled_alpha = ((double) i / ((worm_tailsize - 0.0) / (1.0 - 0.0))) + 0.0;
                 newWorm.alpha = 255.0 - 255.0*scaled_alpha;
-                newWorm.alpha *= newWorm.alpha / 255.0;
+                //newWorm.alpha *= newWorm.alpha / 255.0;
                 newWorm.scaled_size = worm_size * newWorm.alpha / 255.0;
                 newWorm.opaque = worm_opaque;
                 newWorm.colormode = colormode;
@@ -244,7 +263,7 @@ void WormMan::createWorm(float mx, float my)
 void WormMan::drawWorms()
 {
     vector<vector<Worm>>::reverse_iterator it, end;
-    vector<Worm>::iterator w;
+    vector<Worm>::reverse_iterator w;
     for (it = worms.rbegin(), end = worms.rend(); it != end; ++it) {
         // draw eulerian arrows
         if (arrowmode == 1) {
@@ -252,23 +271,23 @@ void WormMan::drawWorms()
         } else {
             // draw each individual worm in each array of worms
             if (it->size() >= 1) {
-                for (w = it->begin(); w != it->end(); w++) {
+                for (w = it->rbegin(); w != it->rend(); w++) {
                     //if (w->alpha == 255.0)
-                    w->draw(pos);
+                    w->draw(pos); // TODO delete pos
                 }
             }
         }
     }
 }
 
-void WormMan::updateComponents(CompMan cm)
+void WormMan::updateComponents()
 {
     // change the components we use for displacement mid-game
-    horizontalComponent = cm.getComponent(horizontalName);
-    verticalComponent = cm.getComponent(verticalName);
+    horizontalComponent = cm->getComponent(horizontalName);
+    verticalComponent = cm->getComponent(verticalName);
 }
 
-void WormMan::updateWorms(CompMan *cm, int t)
+void WormMan::updateWorms(int t)
 {
     float dt = ofGetLastFrameTime();
 
@@ -288,7 +307,7 @@ void WormMan::updateWorms(CompMan *cm, int t)
     for (i = 0, it = worms.rbegin(), end = worms.rend(); it != end; i++, it++) {
 
         for (j = worms[i].size()-1; j > 0; --j) {
-            if (worms[i][j].status > 0 || worms[i][j].lifespan < 0) {
+            if (worms[i][j].status > 0 || (worms[i][j].lifespan < 0 && mode == 0)) {
                 worms[i][j].age += worms[i][j].status;
             }
 
@@ -317,9 +336,9 @@ void WormMan::updateWorms(CompMan *cm, int t)
 
         ofVec2f pt;
         if (mode == 0) {
-            pt.set(it->begin()->x + pos.x, it->begin()->y + pos.y); // eularian->lagrangian <= startx, starty -> x, y
+            pt.set(it->begin()->x, it->begin()->y); // eularian->lagrangian <= startx, starty -> x, y
         } else {
-            pt.set(it->begin()->startx + pos.x, it->begin()->starty + pos.y); // eularian->lagrangian <= startx, starty -> x, y
+            pt.set(it->begin()->startx, it->begin()->starty); // eularian->lagrangian <= startx, starty -> x, y
         }
         ENU enu = cm->solveEquation(pt, t);
         it->begin()->setENU(enu);

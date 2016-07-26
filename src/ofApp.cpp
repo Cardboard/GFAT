@@ -7,55 +7,58 @@ void ofApp::setup(){
     ofEnableAlphaBlending();
 
     // setup byte array
-    SAMPLES = 3686;
-    LINES = 1520;
-    SCALE = 2;
+    SAMPLES = 1007;
+    LINES = 1741;
+    SCALE = 1;
     WIDTH = SAMPLES / SCALE;
     HEIGHT = LINES / SCALE;
     position.set(0, 0);
+    map_zoom = 0.f; // starting zoom for the 2D map
 
     // TODO replace with a Time Manager class thing
     time = new float;
-    *time = 0.0;
+    *time = 0.0; // starting time
     newtime = *time;
     paused = false;
 
     // setup component manager & components
     CM.setup(SAMPLES, LINES, WIDTH, HEIGHT, position.x, position.y);
-    CM.addComponent("N", "north");
-    CM.addComponent("E", "east");
-    CM.addComponent("U", "up");
-    CM.addComponent("MAG", "mag");
-    CM.addComponent("HMAG", "hmag");
+    CM.addComponent("N", "components/north.utm");
+    CM.addComponent("E", "components/east.utm");
+    CM.addComponent("U", "components/up.utm");
+    CM.addComponent("MAG", "components/mag.utm");
+    CM.addComponent("HMAG", "components/hmag.utm");
 
-    CM.addComponent("AMP1N", "sinamp1.north");
-    CM.addComponent("AMP1E", "sinamp1.east");
-    CM.addComponent("AMP1U", "sinamp1.up");
+    CM.addComponent("AMP1N", "components/sinamp1.north.utm");
+    CM.addComponent("AMP1E", "components/sinamp1.east.utm");
+    CM.addComponent("AMP1U", "components/sinamp1.up.utm");
 
-    CM.addComponent("AMP2N", "sinamp2.north");
-    CM.addComponent("AMP2E", "sinamp2.east");
-    CM.addComponent("AMP2U", "sinamp2.up");
-    CM.addComponent("AMP3N", "sinamp3.north");
-    CM.addComponent("AMP3E", "sinamp3.east");
-    CM.addComponent("AMP3U", "sinamp3.up");
+    CM.addComponent("AMP2N", "components/sinamp2.north.utm");
+    CM.addComponent("AMP2E", "components/sinamp2.east.utm");
+    CM.addComponent("AMP2U", "components/sinamp2.up.utm");
+    CM.addComponent("AMP3N", "components/sinamp3.north.utm");
+    CM.addComponent("AMP3E", "components/sinamp3.east.utm");
+    CM.addComponent("AMP3U", "components/sinamp3.up.utm");
 
-    CM.addComponent("PHZ1N", "sinphz1.north");
-    CM.addComponent("PHZ1E", "sinphz1.east");
-    CM.addComponent("PHZ1U", "sinphz1.up");
+    CM.addComponent("PHZ1N", "components/sinphz1.north.utm");
+    CM.addComponent("PHZ1E", "components/sinphz1.east.utm");
+    CM.addComponent("PHZ1U", "components/sinphz1.up.utm");
 
-    CM.addComponent("PHZ2N", "sinphz2.north");
-    CM.addComponent("PHZ2E", "sinphz2.east");
-    CM.addComponent("PHZ2U", "sinphz2.up");
-    CM.addComponent("PHZ3N", "sinphz3.north");
-    CM.addComponent("PHZ3E", "sinphz3.east");
-    CM.addComponent("PHZ3U", "sinphz3.up");
+    CM.addComponent("PHZ2N", "components/sinphz2.north.utm");
+    CM.addComponent("PHZ2E", "components/sinphz2.east.utm");
+    CM.addComponent("PHZ2U", "components/sinphz2.up.utm");
+    CM.addComponent("PHZ3N", "components/sinphz3.north.utm");
+    CM.addComponent("PHZ3E", "components/sinphz3.east.utm");
+    CM.addComponent("PHZ3U", "components/sinphz3.up.utm");
 
+    // TODO what is this for; is it necessary
     CM.setCurrentComponent("MAG");
 
     // setup worm manager & set default vis
-    WM.setup(CM, "E", "N", position);
+    // TODO WM.wormPreset("worms");
+    WM.setup(&CM, "E", "N", position);
     WM.setWormDensity(0.5);
-    WM.setWormLifespan(0);
+    WM.setWormLifespan(50);
     WM.setWormTailSize(100);
     WM.setWormSize(3);
     WM.setWormSpeed(30);
@@ -66,7 +69,7 @@ void ofApp::setup(){
     //WM.worms.clear();
 
     // handle topography
-    img_topo.load("shaded_height.png");
+    img_topo.load("rutford_stretched.png");
     img_topo.resize(WIDTH, HEIGHT);
     img_gdop.load("gdop_test.png");
     img_gdop.resize(WIDTH, HEIGHT);
@@ -104,10 +107,22 @@ void ofApp::setup(){
 
     // temporary(?) viewport stuff
     setViewportSizes();
+
+    img_temp_history.load("selection_history-01.png");
+    img_temp_modelspace.load("model_space-01.png");
+    img_temp_pairspace.load("data_space-01.png");
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
+    // update the guis
+    gui->update();
+    gOptions->update();
+    // keep the guis in their respective viewports
+    ofVec2f restricted_options_pos = restrictPosition(gOptions->getPosition(),\
+                                                      gOptions->getWidth(), gOptions->getHeight(), vMap);
+    gOptions->setPosition(restricted_options_pos.x, restricted_options_pos.y);
+
     // update calculated components
 
     // update current time
@@ -121,14 +136,15 @@ void ofApp::update(){
     }
 
     if (show_worms)
-        WM.updateWorms(&CM, *time);
+        WM.updateWorms(*time);
 
     // point the camera at the 3d topography
-    float rotateAmount = ofMap(ofGetMouseX(), 0, ofGetWidth(), 0, 360);
+    ofVec2f mpos = restrictPosition(ofVec2f(ofGetMouseX(), ofGetMouseY()), 0, 0, v3d); // only move the 3d screen when we mouse over it
+    float rotateAmount = ofMap(mpos.x, v3d.x, v3d.x + v3d.width, 0, 180);
     ofVec3f camDirection(0, 1, 1);
     ofVec3f centre(946/2.f, 1558/2.f, 255/2.f);
-    ofVec3f camDirectionRotated = camDirection.getRotated(rotateAmount, ofVec3f(0, 0, 1));
-    ofVec3f camPosition = centre + camDirectionRotated * 1000.0;
+    ofVec3f camDirectionRotated = camDirection.getRotated(-rotateAmount, ofVec3f(0, 0, -1));
+    ofVec3f camPosition = centre + camDirectionRotated * cam_zoom;
 
     cam.setPosition(camPosition);
     cam.lookAt(centre);
@@ -136,20 +152,41 @@ void ofApp::update(){
 
 }
 
+//--------------------------------------------------------------
 void ofApp::setViewportSizes(){
     float w = ofGetWindowWidth();
     float h = ofGetWindowHeight();
-    /*
+    float timeslider_height = gTimeGui->getSlider("Time")->getHeight();
+
+    // 2D/3D map
     vMap.x = 0;
     vMap.y = 0;
-    vMap.width = w * 2/3;
-    vMap.height = h / 2;
-    v3d.x = w * 2/3;
+    vMap.width = w * 1/2;
+    vMap.height = h - timeslider_height;
+    v3d.x = w * 1/2;
     v3d.y = 0;
-    v3d.width = w * 1/3;
-    v3d.height = h / 2;
-    */
+    v3d.width = w * 1/2;
+    v3d.height = h - timeslider_height;
+
+    // pairspace
+    vPairspace.x = 0;
+    vPairspace.y = 0;
+    vPairspace.width = 0;
+    vPairspace.height = 0;
+    // selection history
+    vHistory.x = 0;
+    vHistory.y = 0;
+    vHistory.width = 0;
+    vHistory.height = 0;
+    // modelspace
+    vModel.x = 0;
+    vModel.y = 0;
+    vModel.width = 0;
+    vModel.height = 0;
+
+
     // debugging 3d viewport
+    /*
     vMap.x = 0;
     vMap.y = 0;
     vMap.width = 0;
@@ -158,14 +195,21 @@ void ofApp::setViewportSizes(){
     v3d.y = 0;
     v3d.width = w;
     v3d.height = h;
+    */
+
+    // keep the guis in their respective viewports
+    ofVec2f restricted_options_pos = restrictPosition(gOptions->getPosition(),\
+                                                      gOptions->getWidth(), gOptions->getHeight(), vMap);
+    gOptions->setPosition(restricted_options_pos.x, restricted_options_pos.y);
 }
 
 //--------------------------------------------------------------
 void ofApp::setupGui(){
     // GUI
     gui = new ofxDatGui(ofxDatGuiAnchor::TOP_LEFT);
+    gui->setAutoDraw(false);
     gui->addFRM(1.0f);
-    ofxDatGui* gTimeGui = new ofxDatGui(ofxDatGuiAnchor::BOTTOM_LEFT);
+    gTimeGui = new ofxDatGui(ofxDatGuiAnchor::BOTTOM_LEFT);
     timeslider = gTimeGui->addSlider("Time", 0, 24*45);
     timeslider->bind(*time);
     timeslider->setWidth(ofGetWindowWidth(), 0.05);
@@ -209,6 +253,12 @@ void ofApp::setupGui(){
     });
     gui->addBreak()->setHeight(10.0f);
     // worms -- gui elements
+    gMapWorms = gui->addToggle("Worm Options", false);
+    gMapWorms->onToggleEvent([&](ofxDatGuiToggleEvent e) {
+        gOptions->setVisible(e.checked); // TODO move elsewhere
+    });
+
+    /*
     gMapWorms = gui->addFolder("Worm Options", ofColor::orangeRed);
     gMapWorms->collapse();
     gMapWorms->addButton("   Default");
@@ -247,15 +297,17 @@ void ofApp::setupGui(){
         } else if (e.target->is("   Circles")) {
             WM.setWormLifespan(100);
             WM.setWormTailSize(2);
-            WM.setWormSize(5);
-            WM.setWormSpeed(30);
+            WM.setWormSize(2);
+            WM.setWormSpeed(60);
             WM.setOpaque(false);
             WM.setArrowMode(0);
-            WM.setWormDensity(0.1);
+            WM.setWormDensity(1.0);
         } else if (e.target->is("   Show future while paused")) {
             // TODO implement these kind of worms
         }
     });
+    */
+    gui->addBreak()->setHeight(10.0f);
 
     // tracks -- gui elements
     gMapTracks = gui->addFolder("Tracks", ofColor::greenYellow);
@@ -291,7 +343,9 @@ void ofApp::setupGui(){
     });
 
     // setup separate options gui for adjusting worms
-    gOptions = new ofxDatGui(ofxDatGuiAnchor::TOP_RIGHT);
+    gOptions = new ofxDatGui(ofxDatGuiAnchor::BOTTOM_LEFT);
+    gOptions->setVisible(false);
+    gOptions->setAutoDraw(false);
     gOptions->addHeader(":: Drag Me To Reposition ::");
     ofxDatGuiSlider* wormsize = gOptions->addSlider("   Size", 1, 10);
     wormsize->setPrecision(0);
@@ -330,13 +384,16 @@ void ofApp::setupGui(){
     });
 }
 
+//--------------------------------------------------------------
 void ofApp::setup3dTopo(){
+    cam_zoom = 1000.0;
     extrusionAmount = 1.0;
     ofImage heightmap;
-    heightmap.load("rutford_surface.png");
+    heightmap.load("rutford_stretched.png");
     // texture
+    map_buffer.allocate(WIDTH, HEIGHT, GL_RGB);
     ofImage topo3dteximg;
-    topo3dteximg.load("rutford_tex.png");
+    topo3dteximg.load("rutford_stretched_tex.png");
     topo3dtex = topo3dteximg.getTexture();
     //topo3dtex.setTextureWrap(GL_REPEAT, GL_REPEAT);
     float h = heightmap.getHeight();
@@ -345,9 +402,9 @@ void ofApp::setup3dTopo(){
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             px_height = max(0.0f, heightmap.getColor(x, y).getBrightness());
-            px_color = min(255.f, 4 * px_height);
+            px_color = max(100.f, 255.f - 8 * px_height);
             topo3d.addVertex(ofPoint(x, y, px_height * extrusionAmount));
-            topo3d.addColor(ofColor(px_color));
+            //topo3d.addColor(ofColor(255.f));
             topo3d.addTexCoord(ofVec2f(x, y));
         }
     }
@@ -374,15 +431,22 @@ void ofApp::draw(){
     ofViewport(vMap);
     ofSetupScreen();
 
-    if (show_heightmap)
-        // TODO delete magic no.
-        img_topo.draw(position.x, position.y);
+    // <------
+    map_buffer.begin();
+
+    if (show_heightmap) {
+        img_topo.draw(0, 0);
+    } else {
+        ofSetColor(225);
+        ofDrawRectangle(vMap.x, vMap.y, WIDTH, HEIGHT);
+        ofSetColor(255, 255, 255);
+    }
 
     if (show_gdop)
         // TODO delete magic no.
-        img_gdop.draw(position.x, position.y);
+        img_gdop.draw(0, 0);
 
-    CM.current.comp.overlay.draw(position.x, position.y); // mask which slightly blocks where we don't have data
+    CM.current.comp.overlay.draw(0, 0); // mask which slightly blocks where we don't have data
 
     if (show_worms)
         WM.drawWorms();
@@ -395,26 +459,68 @@ void ofApp::draw(){
                 it->setPos(position);
         }
     }
+    map_buffer.end();
+    map_buffer.draw(position.x, position.y);
+    topo3dtex = map_buffer.getTexture();
+
+    // <------
+
+    gui->draw();
+    gOptions->draw();
+
     ofPopView(); // done drawing to 2d wormplit viewport
 
     // ========= 3D WORMPLOT ========
-    ofEnableDepthTest();
+
+    drawViewportOutline(v3d);
+    ofPushView();
+    ofViewport(v3d);
+    ofSetupScreen();
+    //ofEnableDepthTest();
     cam.begin(v3d);
-        topo3dtex.bind();
+        map_buffer.getTexture().bind();
         topo3d.draw();
-        topo3dtex.unbind();
+        map_buffer.getTexture().unbind();
     cam.end();
+    ofPopView();
+
+    // ========= PAIRSPACE ========
+    drawViewportOutline(vPairspace);
+    ofPushView();
+    ofViewport(vPairspace);
+    ofSetupScreen();
+    // do any drawing for the pairspace below
+    img_temp_pairspace.draw(0, 0, vPairspace.getWidth(), vPairspace.getHeight());
+    ofPopView();
+    // ========= SELECTION HISTORY ========
+    drawViewportOutline(vHistory);
+    ofPushView();
+    ofViewport(vHistory);
+    ofSetupScreen();
+    // do any drawing for the pairspace below
+    img_temp_history.draw(0, 0, vHistory.getWidth(), vHistory.getHeight());
+
+    ofPopView();
+    // ========= MODELSPACE ========
+    drawViewportOutline(vModel);
+    ofPushView();
+    ofViewport(vModel);
+    ofSetupScreen();
+    // do any drawing for the pairspace below
+    img_temp_modelspace.draw(0, 0, vModel.getWidth(), vModel.getHeight());
+
+    ofPopView();
 }
 
 void ofApp::drawViewportOutline(const ofRectangle & viewport){
     ofPushStyle();
     ofFill();
-    ofSetColor(30);
+    ofSetColor(0);
     ofSetLineWidth(0);
     ofDrawRectangle(viewport);
     ofNoFill();
-    ofSetColor(20);
-    ofSetLineWidth(1.0f);
+    ofSetColor(40);
+    ofSetLineWidth(3.0f);
     ofDrawRectangle(viewport);
     ofPopStyle();
 }
@@ -445,25 +551,10 @@ void ofApp::mouseDragged(int x, int y, int button){
         float m_dy = ofGetMouseY() - ofGetPreviousMouseY();
         position.x += m_dx;
         position.y += m_dy;
-        // restrain the map to the viewport's edges
-        if (WIDTH > vMap.width) {
-            if (position.x > vMap.x) position.x = vMap.x;
-            if (position.x + WIDTH < vMap.width) position.x = vMap.width - WIDTH;
-        } else {
-            // map is smaller than the viewport so keep it within the bounds now
-            if (position.x < vMap.x) position.x = vMap.x;
-            if (position.x + WIDTH > vMap.width) position.x = vMap.width - WIDTH;
-        }
-        if (HEIGHT > vMap.height) {
-            if (position.y > vMap.y) position.y = vMap.y;
-            if (position.y + HEIGHT < vMap.height) position.y = vMap.height - HEIGHT;
-        } else {
-            // map is smaller than the viewport so keep it within the bounds now
-            if (position.y < vMap.y) position.y = vMap.y;
-            if (position.y + HEIGHT > vMap.height) position.y = vMap.height - HEIGHT;
-        }
-        CM.setPos(position);
-        WM.pos.set(position);
+
+        position = restrictPosition(position, WIDTH, HEIGHT, vMap);
+        //CM.setPos(position);
+        //WM.pos.set(position);
 
         // move tracks
         vector<Track>::iterator it, end;
@@ -473,8 +564,8 @@ void ofApp::mouseDragged(int x, int y, int button){
                 it->setPos(position);
         }
     // drag to create a line or whatever of worms
-    } else if (button == 0 && isPointInRect(pt, vMap.position, vMap.width, vMap.height)) {
-        WM.createWorm(x - vMap.x, y - vMap.y);
+    } else if (button == 0 && isPointInRect(pt, ofVec2f(0, 0), vMap.width, vMap.height)) {
+        WM.createWorm(x - position.x, y - position.y);
     }
 }
 
@@ -482,7 +573,7 @@ void ofApp::mouseDragged(int x, int y, int button){
 void ofApp::mousePressed(int x, int y, int button){
     if (button == 0) {
         if (show_worms)
-            WM.createWorm(x, y);
+            WM.createWorm(x - position.x, y - position.y);
         CM.checkClicks(x, y);
 
         // get new set of active tracks depending on the mouse click location
@@ -500,6 +591,7 @@ void ofApp::mousePressed(int x, int y, int button){
 }
 
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY){
+    cam_zoom -= scrollY * 5.f;
 }
 
 
@@ -524,6 +616,11 @@ void ofApp::windowResized(int w, int h){
     timeslider->setWidth(ofGetWindowWidth(), 0.05);
     // resize all of the viewports
     setViewportSizes();
+
+    // make sure the map is within the newly-resized viewport
+    position = restrictPosition(position, WIDTH, HEIGHT, vMap);
+    //CM.setPos(position);
+    //WM.pos.set(position);
 }
 
 //--------------------------------------------------------------
@@ -553,4 +650,25 @@ bool ofApp::isPointInRect(ofVec2f checkpt, ofVec2f pt, float w, float h){
         return true;
     }
     return false;
+}
+
+ofVec2f ofApp::restrictPosition(ofVec2f pos, float obj_w, float obj_h, ofRectangle view){
+    // restrain the map to the viewport's edges
+    if (obj_w > view.width) {
+        if (pos.x > view.x) pos.x = view.x;
+        if (pos.x + obj_w < view.x + view.width) pos.x = view.width - obj_w;
+    } else {
+        // map is smaller than the viewport so keep it within the bounds now
+        if (pos.x < view.x) pos.x = view.x;
+        if (pos.x + obj_w > view.x + view.width) pos.x = view.width - obj_w;
+    }
+    if (obj_h > view.height) {
+        if (pos.y > view.y) pos.y = view.y;
+        if (pos.y + obj_h < view.y + view.height) pos.y = view.height - obj_h;
+    } else {
+        // map is smaller than the viewport so keep it within the bounds now
+        if (pos.y < view.y) pos.y = view.y;
+        if (pos.y + obj_h > view.y + view.height) pos.y = view.height - obj_h;
+    }
+    return pos;
 }

@@ -31,7 +31,7 @@ void CompMan::setPos(ofVec2f pt) {
 void CompMan::addComponent(string name, string filename) {
     Component newComp;
     newComp.setInfo(name, samples, lines);
-    newComp.setPos(pos.x, pos.y);
+    newComp.setPos(0, 0);
     newComp.setSize(width);
     newComp.loadAndConvert(filename);
     newComp.setupImage();

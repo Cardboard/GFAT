@@ -12,7 +12,7 @@ public:
     WormMan();
     ~WormMan();
 
-    void setup(CompMan cm, string horizontalName, string verticalName, ofVec2f p);
+    void setup(CompMan *cm, string horizontalName, string verticalName, ofVec2f p);
     void setColorMode(int i); // color: 0, b&w: 1
     void setMode(int i); // lagrangrian:0, eulerian:1
     void setOpaque(bool b);
@@ -27,9 +27,10 @@ public:
     void drawWorms();
     void createWorm();
     void createWorm(float mx, float my);
-    void updateComponents(CompMan cm);
-    void updateWorms(CompMan *cm, int t);
+    void updateComponents();
+    void updateWorms(int t);
 
+    CompMan *cm;
     string horizontalName;
     string verticalName;
     NamedComp horizontalComponent;

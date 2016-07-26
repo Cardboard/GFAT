@@ -47,6 +47,7 @@ public:
     ofVec2f posToScaledPos(ofVec2f pt);
     ofVec2f scaledPosToPos(ofVec2f pt);
     bool isPointInRect(ofVec2f checkpt, ofVec2f pt, float w, float h);
+    ofVec2f restrictPosition(ofVec2f pos, float obj_w, float obj_h, ofRectangle view);
 
     ofRectangle vMap;
     ofRectangle v3d;
@@ -54,8 +55,10 @@ public:
     ofRectangle vPairspace;
     ofRectangle vHistory;
 
+    float map_zoom;
     ofCamera cam;
     float extrusionAmount;
+    float cam_zoom;
     ofVboMesh topo3d;
     ofTexture topo3dtex;
 
@@ -73,6 +76,10 @@ public:
     ofVec2f pos_topo;
     float w_topo;
     float h_topo;
+
+    ofImage img_temp_history;
+    ofImage img_temp_modelspace;
+    ofImage img_temp_pairspace;
 
     CompMan CM;
     WormMan WM;
@@ -93,10 +100,13 @@ public:
 
     // GUI
     ofxDatGui* gui;
+    ofxDatGui* gTimeGui;
+    ofFbo map_buffer;
     ofxDatGuiSlider* timeslider;
     ofxDatGui* gOptions;
     ofxDatGuiFolder* gMapLayers;
-    ofxDatGuiFolder* gMapWorms;
+    //ofxDatGuiFolder* gMapWorms;
+    ofxDatGuiToggle* gMapWorms;
     ofxDatGuiFolder* gMapTracks;
     ofxDatGuiFolder* gMapModel;
     bool show_tracks;
