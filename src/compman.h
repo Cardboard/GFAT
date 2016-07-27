@@ -36,7 +36,6 @@ public:
     ENU solveEquation(ofVec2f point, float time);
 
 
-
     //
 
     vector<NamedComp> components;
@@ -48,6 +47,12 @@ public:
     int height;
     int samples;
     int lines;
+
+    // function toggling (0: off, 1: on)
+    int secular_enabled;
+    int p1_enabled;
+    int p2_enabled;
+    int p3_enabled;
 
 };
 

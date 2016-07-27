@@ -13,6 +13,7 @@ public:
     ~WormMan();
 
     void setup(CompMan *cm, string horizontalName, string verticalName, ofVec2f p);
+    void wormPreset(string name);
     void setColorMode(int i); // color: 0, b&w: 1
     void setMode(int i); // lagrangrian:0, eulerian:1
     void setOpaque(bool b);

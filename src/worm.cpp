@@ -69,16 +69,25 @@ void Worm::draw(ofVec2f offset)
     }
     */
 
+    float up_scale = min(10.f, 20.f * abs(enu.up));
 
     // don't draw worms that haven't moved at all yet
     if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
         ofSetColor(0, 0, 0, 0);
     } else {
+        // draw outline
+        /*
+        ofSetColor(255);
+        ofNoFill();
+        ofDrawCircle(x, y, up_scale * size);//scaled_size);
+        ofFill();
+        */
         if (opaque) {
             ofSetColor(color.red, color.green, color.blue, 255);
         } else {
             ofSetColor(color.red, color.green, color.blue, min((float)age, alpha));
         }
+
     }
 
     ofDrawCircle(x, y, scaled_size);

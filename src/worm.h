@@ -47,7 +47,7 @@ public:
     float startx;
     float starty;
     float size;
-    double scaled_size;
+    float scaled_size;
     bool opaque;
     bool colormode;
 

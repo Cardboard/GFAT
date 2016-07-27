@@ -13,6 +13,12 @@ void CompMan::setup(int s, int l, int w, int h, int x, int y) {
     width = w;
     height = h;
     pos.set(x,y);
+
+    // function toggles
+    secular_enabled = 1;
+    p1_enabled = 1;
+    p2_enabled = 1;
+    p3_enabled = 1;
 }
 
 void CompMan::setup(int s, int l, int w, int h) {
@@ -155,20 +161,20 @@ ENU CompMan::solveEquation(float t) {
 
     // solve for east component
     result_e = vel_e + \
-            amp1_e * sin((2 * M_PI / period_1) * t + phz1_e) + \
-            amp2_e * sin((2 * M_PI / period_2) * t + phz2_e) + \
-            amp3_e * sin((2 * M_PI / period_3) * t + phz3_e);
+            p1_enabled * (amp1_e * sin((2 * M_PI / period_1) * t + phz1_e)) + \
+            p2_enabled * (amp2_e * sin((2 * M_PI / period_2) * t + phz2_e)) + \
+            p3_enabled * (amp3_e * sin((2 * M_PI / period_3) * t + phz3_e));
 
     // solve for north component
     result_n = vel_n + \
-            amp1_n * sin((2 * M_PI / period_1) * t + phz1_n) + \
-            amp2_n * sin((2 * M_PI / period_2) * t + phz2_n) + \
-            amp3_n * sin((2 * M_PI / period_3) * t + phz3_n);
+            p1_enabled * (amp1_n * sin((2 * M_PI / period_1) * t + phz1_n)) + \
+            p2_enabled * (amp2_n * sin((2 * M_PI / period_2) * t + phz2_n)) + \
+            p3_enabled * (amp3_n * sin((2 * M_PI / period_3) * t + phz3_n));
     // solve for up component
     result_u = vel_u + \
-            amp1_u * sin((2 * M_PI / period_1) * t + phz1_u) + \
-            amp2_u * sin((2 * M_PI / period_2) * t + phz2_u) + \
-            amp3_u * sin((2 * M_PI / period_3) * t + phz3_u);
+            p1_enabled * (amp1_u * sin((2 * M_PI / period_1) * t + phz1_u)) + \
+            p2_enabled * (amp2_u * sin((2 * M_PI / period_2) * t + phz2_u)) + \
+            p3_enabled * (amp3_u * sin((2 * M_PI / period_3) * t + phz3_u));
 
     ENU u(result_e, result_n, result_u);
 
@@ -243,21 +249,21 @@ ENU CompMan::solveEquation(ofVec2f p, float t) {
     }
 
     // solve for east component
-    result_e = vel_e + \
-            amp1_e * sin((2 * M_PI / period_1) * t + phz1_e) + \
-            amp2_e * sin((2 * M_PI / period_2) * t + phz2_e) + \
-            amp3_e * sin((2 * M_PI / period_3) * t + phz3_e);
+    result_e = secular_enabled * vel_e + \
+            p1_enabled * (amp1_e * sin((2 * M_PI / period_1) * t + phz1_e)) + \
+            p2_enabled * (amp2_e * sin((2 * M_PI / period_2) * t + phz2_e)) + \
+            p3_enabled * (amp3_e * sin((2 * M_PI / period_3) * t + phz3_e));
 
     // solve for north component
-    result_n = vel_n + \
-            amp1_n * sin((2 * M_PI / period_1) * t + phz1_n) + \
-            amp2_n * sin((2 * M_PI / period_2) * t + phz2_n) + \
-            amp3_n * sin((2 * M_PI / period_3) * t + phz3_n);
+    result_n = secular_enabled * vel_n + \
+            p1_enabled * (amp1_n * sin((2 * M_PI / period_1) * t + phz1_n)) + \
+            p2_enabled * (amp2_n * sin((2 * M_PI / period_2) * t + phz2_n)) + \
+            p3_enabled * (amp3_n * sin((2 * M_PI / period_3) * t + phz3_n));
     // solve for up component
-    result_u = vel_u + \
-            amp1_u * sin((2 * M_PI / period_1) * t + phz1_u) + \
-            amp2_u * sin((2 * M_PI / period_2) * t + phz2_u) + \
-            amp3_u * sin((2 * M_PI / period_3) * t + phz3_u);
+    result_u = secular_enabled * vel_u + \
+            p1_enabled * (amp1_u * sin((2 * M_PI / period_1) * t + phz1_u)) + \
+            p2_enabled * (amp2_u * sin((2 * M_PI / period_2) * t + phz2_u)) + \
+            p3_enabled * (amp3_u * sin((2 * M_PI / period_3) * t + phz3_u));
 
     ENU u(result_e, result_n, result_u);
 

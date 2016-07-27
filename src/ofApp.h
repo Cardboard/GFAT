@@ -26,6 +26,7 @@ public:
 
     void setupGui();
     void setup3dTopo();
+    void setCameraPosition();
     void setViewportSizes();
     void drawViewportOutline(const ofRectangle & viewport);
 
@@ -48,6 +49,8 @@ public:
     ofVec2f scaledPosToPos(ofVec2f pt);
     bool isPointInRect(ofVec2f checkpt, ofVec2f pt, float w, float h);
     ofVec2f restrictPosition(ofVec2f pos, float obj_w, float obj_h, ofRectangle view);
+    void toggleFullscreen(ofRectangle *view);
+
 
     ofRectangle vMap;
     ofRectangle v3d;
@@ -76,6 +79,17 @@ public:
     ofVec2f pos_topo;
     float w_topo;
     float h_topo;
+
+    // extra buttons not on a particular ofxDatGui
+    bool fullscreen; // true when any view is in fullscreen mode
+    ofImage img_3d_button;
+    ofImage img_2d_button;
+    ofImage img_fullscreen;
+    ofRectangle button_2d;
+    ofRectangle button_3d;
+    ofRectangle fullscreen_map;
+    ofRectangle fullscreen_3d;
+    int map_mode; // either 2 (for 2D) or 3 (for 3D)
 
     ofImage img_temp_history;
     ofImage img_temp_modelspace;

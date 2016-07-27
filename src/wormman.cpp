@@ -138,6 +138,85 @@ void WormMan::setUniform(bool b)
     refreshWorms(true);
 }
 
+void WormMan::wormPreset(string name) {
+    if (name == "worms") {
+        if (mode == 0) {
+            setWormDensity(0.5);
+            setWormLifespan(50);
+            setWormTailSize(50);
+            setWormSize(3);
+            setWormSpeed(30);
+            setUniform(false);
+            setOpaque(false);
+            setMode(0);
+            setArrowMode(0);
+        } else if (mode == 1) {
+            setWormDensity(0.1);
+            setWormLifespan(0);
+            setWormTailSize(50);
+            setWormSize(3);
+            setWormSpeed(30);
+            setUniform(false);
+            setOpaque(false);
+            setArrowMode(0);
+        }
+    } else if (name == "lines") {
+        if (mode == 0) {
+            setWormLifespan(500);
+            setWormTailSize(500);
+            setWormSize(1);
+            setWormSpeed(30);
+            setOpaque(true);
+            setWormDensity(0.1);
+            setArrowMode(0);
+        } else if (mode == 1) {
+            setWormLifespan(0);
+            setWormTailSize(100);
+            setWormSize(1);
+            setWormSpeed(30);
+            setOpaque(false);
+            setWormDensity(0.025);
+            setArrowMode(0);
+        }
+    } else if (name == "dots") {
+        if (mode == 0) {
+            setWormLifespan(100);
+            setWormTailSize(2);
+            setWormSize(2);
+            setWormSpeed(60);
+            setOpaque(true);
+            setArrowMode(0);
+            setWormDensity(1.0);
+        } else if (mode == 1) {
+            setWormLifespan(0);
+            setWormTailSize(1);
+            setWormSize(2);
+            setWormSpeed(60);
+            setOpaque(false);
+            setArrowMode(0);
+            setWormDensity(0.2);
+        }
+    } else if (name == "disp" && mode == 1) {
+        setWormLifespan(0);
+        setWormTailSize(2);
+        setWormSize(5);
+        setWormSpeed(30);
+        setOpaque(true);
+        setUniform(true);
+        setArrowMode(0);
+        setWormDensity(0.5);
+    } else if (name == "arrows" && mode == 1) {
+        setWormLifespan(300);
+        setWormTailSize(50);
+        setWormSize(2);
+        setWormSpeed(30);
+        setOpaque(false);
+        setUniform(false);
+        setArrowMode(1);
+        setWormDensity(0.2);
+    }
+}
+
 
 void WormMan::refreshWorms(bool respawn) // removes or updates current worms with updated properties
 {

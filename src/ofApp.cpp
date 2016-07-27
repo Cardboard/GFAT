@@ -5,6 +5,7 @@
 void ofApp::setup(){
     ofSetVerticalSync(true);
     ofEnableAlphaBlending();
+    ofEnableAntiAliasing();
 
     // setup byte array
     SAMPLES = 1007;
@@ -13,7 +14,9 @@ void ofApp::setup(){
     WIDTH = SAMPLES / SCALE;
     HEIGHT = LINES / SCALE;
     position.set(0, 0);
-    map_zoom = 0.f; // starting zoom for the 2D map
+    map_zoom = 1.f; // starting zoom for the 2D map
+    map_mode = 2; // start in 2D mode (change to 3 to start in 3D mode)
+    fullscreen = false; // start in fullscreen mode because we toggle fullscreen at the program's start
 
     // TODO replace with a Time Manager class thing
     time = new float;
@@ -55,24 +58,28 @@ void ofApp::setup(){
     CM.setCurrentComponent("MAG");
 
     // setup worm manager & set default vis
-    // TODO WM.wormPreset("worms");
     WM.setup(&CM, "E", "N", position);
-    WM.setWormDensity(0.5);
-    WM.setWormLifespan(50);
-    WM.setWormTailSize(100);
-    WM.setWormSize(3);
-    WM.setWormSpeed(30);
-    WM.setUniform(false);
-    WM.setOpaque(false);
-    WM.setMode(0);
-    WM.setArrowMode(0);
-    //WM.worms.clear();
+    WM.wormPreset("worms");
 
     // handle topography
     img_topo.load("rutford_stretched.png");
     img_topo.resize(WIDTH, HEIGHT);
     img_gdop.load("gdop_test.png");
     img_gdop.resize(WIDTH, HEIGHT);
+
+    // 2d & 3d toggle buttons
+    img_3d_button.load("3dview_button.png");
+    button_3d.width = img_3d_button.getWidth();
+    button_3d.height = img_3d_button.getHeight();
+    img_2d_button.load("2dview_button.png");
+    button_2d.width = img_2d_button.getWidth();
+    button_2d.height = img_2d_button.getHeight();
+    img_fullscreen.load("fullscreen_button.png");
+    fullscreen_map.width = img_fullscreen.getWidth();
+    fullscreen_map.height = img_fullscreen.getHeight();
+    fullscreen_3d.width = img_fullscreen.getWidth();
+    fullscreen_3d.height = img_fullscreen.getHeight();
+
 
     ofVec2f tl(500+600,750);
     ofVec2f tr(500+1700,500);
@@ -107,6 +114,7 @@ void ofApp::setup(){
 
     // temporary(?) viewport stuff
     setViewportSizes();
+    toggleFullscreen(&v3d);
 
     img_temp_history.load("selection_history-01.png");
     img_temp_modelspace.load("model_space-01.png");
@@ -138,17 +146,14 @@ void ofApp::update(){
     if (show_worms)
         WM.updateWorms(*time);
 
-    // point the camera at the 3d topography
-    ofVec2f mpos = restrictPosition(ofVec2f(ofGetMouseX(), ofGetMouseY()), 0, 0, v3d); // only move the 3d screen when we mouse over it
-    float rotateAmount = ofMap(mpos.x, v3d.x, v3d.x + v3d.width, 0, 180);
-    ofVec3f camDirection(0, 1, 1);
-    ofVec3f centre(946/2.f, 1558/2.f, 255/2.f);
-    ofVec3f camDirectionRotated = camDirection.getRotated(-rotateAmount, ofVec3f(0, 0, -1));
-    ofVec3f camPosition = centre + camDirectionRotated * cam_zoom;
-
-    cam.setPosition(camPosition);
-    cam.lookAt(centre);
-    cam.roll(rotateAmount);
+    // mouse-related stuff
+    float mx = ofGetMouseX();
+    float my = ofGetMouseY();
+    // 3D topography rotation
+    if (isPointInRect(ofVec2f(mx, my), v3d.position, v3d.width, v3d.height)) {
+        // point the camera at the 3d topography
+        setCameraPosition();
+    }
 
 }
 
@@ -184,18 +189,17 @@ void ofApp::setViewportSizes(){
     vModel.width = 0;
     vModel.height = 0;
 
-
-    // debugging 3d viewport
-    /*
-    vMap.x = 0;
-    vMap.y = 0;
-    vMap.width = 0;
-    vMap.height = 0;
-    v3d.x = 0;
-    v3d.y = 0;
-    v3d.width = w;
-    v3d.height = h;
-    */
+    // place the 2D & 3D toggle buttons in the map view
+    button_2d.x = vMap.x + vMap.width - button_3d.width - button_2d.width;
+    button_3d.x = vMap.x + vMap.width - button_3d.width;
+    button_2d.y = vMap.y;
+    button_3d.y = vMap.y;
+    // place the fullscreen button for the map
+    fullscreen_map.x = vMap.x + vMap.width - fullscreen_map.width;
+    fullscreen_map.y = vMap.y + vMap.height - fullscreen_map.height;
+    // place the fullscreen button for the 3d map
+    fullscreen_3d.x = v3d.x + v3d.width - fullscreen_3d.width;
+    fullscreen_3d.y = v3d.y + v3d.height - fullscreen_3d.height;
 
     // keep the guis in their respective viewports
     ofVec2f restricted_options_pos = restrictPosition(gOptions->getPosition(),\
@@ -213,6 +217,7 @@ void ofApp::setupGui(){
     timeslider = gTimeGui->addSlider("Time", 0, 24*45);
     timeslider->bind(*time);
     timeslider->setWidth(ofGetWindowWidth(), 0.05);
+
     // layers -- gui elements
     gMapLayers = gui->addFolder("Layers", ofColor::aliceBlue);
     gMapLayers->collapse();
@@ -226,6 +231,64 @@ void ofApp::setupGui(){
     gMapLayers->addToggle("   GDOP", false);
     show_heightmap = true;
     gMapLayers->addToggle("   Heightmap", show_heightmap);
+    gui->addBreak()->setHeight(10.0f);
+
+    // worms -- gui elements
+    gMapWorms = gui->addToggle("Worm Options", false);
+    gui->addBreak()->setHeight(10.0f);
+
+    // tracks -- gui elements
+    gMapTracks = gui->addFolder("Tracks", ofColor::greenYellow);
+    gMapTracks->collapse();
+    gMapTracks->addButton("   Clear Selection");
+    gMapTracks->addButton("   Select All Available Tracks");
+    ofxDatGuiMatrix* tracks = gMapTracks->addMatrix("   Available Tracks", 56, true);
+    tracks->setRadioMode(false);
+    gui->addBreak()->setHeight(10.0f);
+
+    // model -- gui elements
+    gMapModel = gui->addFolder("Model", ofColor::fuchsia);
+    gMapModel->collapse();
+    gMapModel->addToggle("   Secular Velocity", true);
+    gMapModel->addToggle("   Period 1", true);
+    gMapModel->addToggle("   Period 2", true);
+    gMapModel->addToggle("   Period 3", true);
+    gMapModel->addToggle("   F(x)", false);
+
+    // worms -- gui elements
+    gOptions = new ofxDatGui(ofxDatGuiAnchor::BOTTOM_LEFT);
+    gOptions->setVisible(false);
+    gOptions->setAutoDraw(false);
+    gOptions->addHeader(":: Drag Me To Reposition ::");
+    // eulerian - lagrangian toggle
+    ofxDatGuiToggle *euler_toggle = gOptions->addToggle("LaGrangian", false);
+    // -- worm presets
+    ofxDatGuiFolder *gWormPresets = gOptions->addFolder("Presets", ofColor::thistle);
+    gWormPresets->collapse();
+    gWormPresets->addButton("   Worms");
+    gWormPresets->addButton("   Lines");
+    gWormPresets->addButton("   Arrows");
+    gWormPresets->addButton("   Dots");
+    // -- individual worm options
+    gOptions->addBreak()->setHeight(10.0f);
+    ofxDatGuiSlider* wormsize = gOptions->addSlider("   Size", 1, 10);
+    wormsize->setPrecision(0);
+    wormsize->setValue(WM.worm_size);
+    ofxDatGuiSlider* wormdensity = gOptions->addSlider("   Density", 0.0f, 1.0f);
+    wormdensity->setValue(WM.worm_density);
+    // weird behavior occurs when tail length is 1 for some reason
+    ofxDatGuiSlider* wormlength = gOptions->addSlider("   Tail Length", 2, 500);
+    wormlength->setPrecision(0);
+    wormlength->setValue(WM.worm_tailsize);
+    ofxDatGuiSlider* wormlifespan = gOptions->addSlider("   Lifespan", 50, 500);
+    wormlifespan->setPrecision(0);
+    wormlifespan->setValue(WM.worm_lifespan);
+    ofxDatGuiToggle* wormopaque = gOptions->addToggle("   Opaque", false);
+    wormopaque->setChecked(WM.worm_opaque);
+
+    // tracks -- events
+    gMapTracks->onButtonEvent([&](ofxDatGuiButtonEvent e) {
+    });
     // layers -- events
     gMapLayers->onToggleEvent([&](ofxDatGuiToggleEvent e) {
         if (e.target->is("Track")) {
@@ -251,116 +314,67 @@ void ofApp::setupGui(){
             show_heightmap = e.checked;
         }
     });
-    gui->addBreak()->setHeight(10.0f);
-    // worms -- gui elements
-    gMapWorms = gui->addToggle("Worm Options", false);
-    gMapWorms->onToggleEvent([&](ofxDatGuiToggleEvent e) {
-        gOptions->setVisible(e.checked); // TODO move elsewhere
-    });
-
-    /*
-    gMapWorms = gui->addFolder("Worm Options", ofColor::orangeRed);
-    gMapWorms->collapse();
-    gMapWorms->addButton("   Default");
-    gMapWorms->addButton("   Streamlines");
-    gMapWorms->addButton("   Arrows");
-    gMapWorms->addButton("   Circles");
-    gMapWorms->addToggle("   Show future while paused", false);
-    gui->addBreak()->setHeight(10.0f);
-
-    // worms -- events
-    gMapWorms->onButtonEvent([&](ofxDatGuiButtonEvent e) {
-        if (e.target->is("   Default")) {
-            WM.setWormLifespan(100);
-            WM.setWormTailSize(100);
-            WM.setWormSize(3);
-            WM.setWormSpeed(30);
-            WM.setOpaque(false);
-            WM.setArrowMode(0);
-            WM.setWormDensity(3.0);
-        } else if (e.target->is("   Streamlines")) {
-            WM.setWormLifespan(500);
-            WM.setWormTailSize(500);
-            WM.setWormSize(1);
-            WM.setWormSpeed(15);
-            WM.setOpaque(true);
-            WM.setArrowMode(0);
-            WM.setWormDensity(5.0);
-        } else if (e.target->is("   Arrows")) {
-            WM.setWormLifespan(300);
-            WM.setWormTailSize(50);
-            WM.setWormSize(2);
-            WM.setWormSpeed(30);
-            WM.setOpaque(false);
-            WM.setArrowMode(1);
-            WM.setWormDensity(3.0);
-        } else if (e.target->is("   Circles")) {
-            WM.setWormLifespan(100);
-            WM.setWormTailSize(2);
-            WM.setWormSize(2);
-            WM.setWormSpeed(60);
-            WM.setOpaque(false);
-            WM.setArrowMode(0);
-            WM.setWormDensity(1.0);
-        } else if (e.target->is("   Show future while paused")) {
-            // TODO implement these kind of worms
-        }
-    });
-    */
-    gui->addBreak()->setHeight(10.0f);
-
-    // tracks -- gui elements
-    gMapTracks = gui->addFolder("Tracks", ofColor::greenYellow);
-    gMapTracks->collapse();
-    gMapTracks->addButton("   Clear Selection");
-    gMapTracks->addButton("   Select All Available Tracks");
-    ofxDatGuiMatrix* tracks = gMapTracks->addMatrix("   Available Tracks", 56, true);
-    tracks->setRadioMode(false);
-    gui->addBreak()->setHeight(10.0f);
-    // tracks -- events
-    gMapTracks->onButtonEvent([&](ofxDatGuiButtonEvent e) {
-    });
-
-    // model -- gui elements
-    gMapModel = gui->addFolder("Model", ofColor::fuchsia);
-    gMapModel->collapse();
-    gMapModel->addToggle("   Secular Velocity", true);
-    gMapModel->addToggle("   Period 1", true);
-    gMapModel->addToggle("   Period 2", true);
-    gMapModel->addToggle("   Period 3", true);
-    gMapModel->addToggle("   F(x)", false);
     // model -- events
     gMapModel->onToggleEvent([&](ofxDatGuiToggleEvent e) {
         if (e.target->is("   Secular Velocity")) {
-            if (e.checked == true) {
-                WM.setMode(0);
-                WM.refreshWorms(true);
-            } else {
-                WM.setMode(1);
+            CM.secular_enabled = e.checked == true ? 1 : 0;
+            // if we're in eulerian mode we need to refresh the worms
+            // so that the worms' starting ENU values get reset
+            if (WM.mode == 1) {
                 WM.refreshWorms(true);
             }
+        } else if (e.target->is("   Period 1")) {
+            CM.p1_enabled = e.checked == true ? 1 : 0;
+        } else if (e.target->is("   Period 2")) {
+            CM.p2_enabled = e.checked == true ? 1 : 0;
+        } else if (e.target->is("   Period 3")) {
+            CM.p3_enabled = e.checked == true ? 1 : 0;
         }
     });
+    gOptions->getToggle("   Arrows")->setVisible(false);
 
-    // setup separate options gui for adjusting worms
-    gOptions = new ofxDatGui(ofxDatGuiAnchor::BOTTOM_LEFT);
-    gOptions->setVisible(false);
-    gOptions->setAutoDraw(false);
-    gOptions->addHeader(":: Drag Me To Reposition ::");
-    ofxDatGuiSlider* wormsize = gOptions->addSlider("   Size", 1, 10);
-    wormsize->setPrecision(0);
-    wormsize->setValue(WM.worm_size);
-    ofxDatGuiSlider* wormdensity = gOptions->addSlider("   Density", 0.0f, 1.0f);
-    wormdensity->setValue(WM.worm_density);
-    // weird behavior occurs when tail length is 1 for some reason
-    ofxDatGuiSlider* wormlength = gOptions->addSlider("   Tail Length", 2, 500);
-    wormlength->setPrecision(0);
-    wormlength->setValue(WM.worm_tailsize);
-    ofxDatGuiSlider* wormlifespan = gOptions->addSlider("   Lifespan", 50, 500);
-    wormlifespan->setPrecision(0);
-    wormlifespan->setValue(WM.worm_lifespan);
-    ofxDatGuiToggle* wormopaque = gOptions->addToggle("   Opaque", false);
-    wormopaque->setChecked(WM.worm_opaque);
+    // worms -- events
+    euler_toggle->onToggleEvent([&](ofxDatGuiToggleEvent e) {
+        if (e.checked == false) {
+            //  disable certain eulerian-only options
+            gOptions->getToggle("   Arrows")->setVisible(false);
+            WM.setMode(0);
+            WM.wormPreset("worms");
+            // turn off euler arrows if they're turned on,
+            // since this vis doesn't work with lagrangian motion
+            if (WM.arrowmode == 1) {
+                WM.setArrowMode(0);
+            }
+            WM.refreshWorms(true);
+            // update the label to reflect the toggle's current state
+            e.target->setLabel("LaGrangian");
+        } else {
+            // re-enable certain eulerian-only options
+            gOptions->getToggle("   Arrows")->setVisible(true);
+            WM.setMode(1);
+            WM.wormPreset("worms");
+            WM.refreshWorms(true);
+            // update the label to reflect the toggle's current state
+            e.target->setLabel("Eulerian");
+        }
+    });
+    gWormPresets->onButtonEvent([&](ofxDatGuiButtonEvent e) {
+        if (e.target->is("   Worms")) {
+            WM.wormPreset("worms");
+        } else if (e.target->is("   Lines")) {
+            WM.wormPreset("lines");
+        } else if (e.target->is("   Arrows")) {
+            WM.wormPreset("arrows");
+        } else if (e.target->is("   Dots")) {
+            WM.wormPreset("dots");
+        }
+        // TODO update slider values to reflect the preset
+    });
+    gMapWorms->onToggleEvent([&](ofxDatGuiToggleEvent e) {
+        gOptions->setPosition(ofxDatGuiAnchor::BOTTOM_LEFT);
+        gOptions->setVisible(e.checked); // TODO move elsewhere
+    });
+    // worm options -- events
     gOptions->onSliderEvent([&](ofxDatGuiSliderEvent e) {
         if (e.target->is("   Size")) {
             WM.setWormSize(e.value);
@@ -382,6 +396,7 @@ void ofApp::setupGui(){
             WM.refreshWorms(false);
         }
     });
+
 }
 
 //--------------------------------------------------------------
@@ -399,8 +414,8 @@ void ofApp::setup3dTopo(){
     float h = heightmap.getHeight();
     float w = heightmap.getWidth();
     float px_height, px_color;
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
+    for (int y = 0; y < h; y+=25) {
+        for (int x = 0; x < w; x+=25) {
             px_height = max(0.0f, heightmap.getColor(x, y).getBrightness());
             px_color = max(100.f, 255.f - 8 * px_height);
             topo3d.addVertex(ofPoint(x, y, px_height * extrusionAmount));
@@ -421,6 +436,20 @@ void ofApp::setup3dTopo(){
     }
 
     cam.setScale(1, -1, 1);
+    setCameraPosition();
+}
+
+void ofApp::setCameraPosition(){
+    ofVec2f mpos = restrictPosition(ofVec2f(ofGetMouseX(), ofGetMouseY()), 0, 0, v3d); // only move the 3d screen when we mouse over it
+    float rotateAmount = ofMap(mpos.x, v3d.x, v3d.x + v3d.width, 0, 360);
+    ofVec3f camDirection(0, 1, 1);
+    ofVec3f centre(946/2.f, 1558.f * 3/4.f, 255/2.f);
+    ofVec3f camDirectionRotated = camDirection.getRotated(rotateAmount, ofVec3f(0, 0, 1));
+    ofVec3f camPosition = centre + camDirectionRotated * cam_zoom;
+
+    cam.setPosition(camPosition);
+    cam.lookAt(centre);
+    cam.roll(rotateAmount);
 }
 
 //--------------------------------------------------------------
@@ -432,6 +461,9 @@ void ofApp::draw(){
     ofSetupScreen();
 
     // <------
+    // everything drawn between map_buffer.begin() and map_buffer.end() will be
+    // drawn onto either the 2D view or on the 3D mesh, depending on which mode we're in.
+    // the gui and buttons are thus drawn after the buffer drawing
     map_buffer.begin();
 
     if (show_heightmap) {
@@ -446,7 +478,7 @@ void ofApp::draw(){
         // TODO delete magic no.
         img_gdop.draw(0, 0);
 
-    CM.current.comp.overlay.draw(0, 0); // mask which slightly blocks where we don't have data
+    //CM.current.comp.overlay.draw(0, 0); // mask which slightly blocks where we don't have data
 
     if (show_worms)
         WM.drawWorms();
@@ -460,13 +492,18 @@ void ofApp::draw(){
         }
     }
     map_buffer.end();
-    map_buffer.draw(position.x, position.y);
+    map_buffer.draw(position.x, position.y, WIDTH * map_zoom, HEIGHT * map_zoom);
     topo3dtex = map_buffer.getTexture();
 
     // <------
 
+    // draw guis
     gui->draw();
     gOptions->draw();
+    // draw buttons
+    //img_3d_button.draw(button_3d.position);
+    //img_2d_button.draw(button_2d.position);
+    img_fullscreen.draw(fullscreen_map);
 
     ofPopView(); // done drawing to 2d wormplit viewport
 
@@ -477,12 +514,47 @@ void ofApp::draw(){
     ofViewport(v3d);
     ofSetupScreen();
     //ofEnableDepthTest();
-    cam.begin(v3d);
-        map_buffer.getTexture().bind();
-        topo3d.draw();
-        map_buffer.getTexture().unbind();
-    cam.end();
+        cam.begin(v3d);
+            //map_buffer.getTexture().bind();
+            //topo3d.draw();
+            //map_buffer.getTexture().unbind();
+            // draw vertices (probably for testing)
+
+            ofSetColor(ofColor::gray);
+            //topo3d.drawWireframe();
+            glPointSize(2);
+            ofSetColor(ofColor::yellow);
+            topo3d.drawVertices();
+
+        cam.end();
+        // more vertices drawing code
+        int n = topo3d.getNumVertices();
+        float nearestDistance = 0;
+        ofVec2f nearestVertex;
+        int nearestIndex = 0;
+        ofVec2f mouse (mouseX - v3d.x, mouseY - v3d.y);
+        for (int i=0; i<n; i++) {
+            ofVec3f cur = cam.worldToScreen(topo3d.getVertex(i));
+            float distance = cur.distance(mouse);
+            if (i==0 || distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestVertex = cur;
+                nearestIndex = i;
+            }
+        }
+        ofSetColor(ofColor::aquamarine);
+        ofDrawLine(nearestVertex, mouse);
+
+        ofNoFill;
+        ofSetColor(ofColor::magenta);
+        ofDrawCircle(nearestVertex, 4);
+        ofVec2f offset(10, -10);
+        ofDrawBitmapStringHighlight(ofToString(nearestIndex), mouse + offset);
+        ofSetColor(ofColor::white);
+
     ofPopView();
+    // TODO draw this inside the viewport drawing? (only visible when in fullscreen mode for v3d?...)
+    img_fullscreen.draw(fullscreen_3d);
 
     // ========= PAIRSPACE ========
     drawViewportOutline(vPairspace);
@@ -552,7 +624,7 @@ void ofApp::mouseDragged(int x, int y, int button){
         position.x += m_dx;
         position.y += m_dy;
 
-        position = restrictPosition(position, WIDTH, HEIGHT, vMap);
+        position = restrictPosition(position, WIDTH * map_zoom, HEIGHT * map_zoom, vMap);
         //CM.setPos(position);
         //WM.pos.set(position);
 
@@ -565,19 +637,33 @@ void ofApp::mouseDragged(int x, int y, int button){
         }
     // drag to create a line or whatever of worms
     } else if (button == 0 && isPointInRect(pt, ofVec2f(0, 0), vMap.width, vMap.height)) {
-        WM.createWorm(x - position.x, y - position.y);
+        WM.createWorm((x - position.x) / map_zoom, (y - position.y) / map_zoom);
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
+    // left clicks
     if (button == 0) {
         if (show_worms)
-            WM.createWorm(x - position.x, y - position.y);
-        CM.checkClicks(x, y);
+            WM.createWorm((x - position.x) / map_zoom, (y - position.y) / map_zoom);
 
         // get new set of active tracks depending on the mouse click location
         vector<Track>::iterator it, end;
+
+        // 2d/3d toggle buttons
+        if (isPointInRect(ofVec2f(x, y), button_2d.position, button_2d.width, button_2d.height)) {
+            map_mode = 2;
+        } else if (isPointInRect(ofVec2f(x, y), button_3d.position, button_3d.width, button_3d.height)) {
+            map_mode = 3;
+        }
+
+        // fullscreen toggle buttons
+        if (isPointInRect(ofVec2f(x, y), fullscreen_map.position, fullscreen_map.width, fullscreen_map.height)) {
+            toggleFullscreen(&vMap);
+        } else if (isPointInRect(ofVec2f(x, y), fullscreen_3d.position, fullscreen_3d.width, fullscreen_3d.height)) {
+            toggleFullscreen(&v3d);
+        }
 
         for (it = tracks.begin(), end = tracks.end(); it != end; it++) {
             if (it->isClickInTrack(x, y) == true) {// && gui_tracks.getToggle("track " + to_string(it->trackno))) {
@@ -591,7 +677,15 @@ void ofApp::mousePressed(int x, int y, int button){
 }
 
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY){
-    cam_zoom -= scrollY * 5.f;
+    float mx = ofGetMouseX();
+    float my = ofGetMouseY();
+    // 3D topography rotation
+    if (isPointInRect(ofVec2f(mx, my), v3d.position, v3d.width, v3d.height)) {
+        cam_zoom -= scrollY * 5.f;
+    } else if (isPointInRect(ofVec2f(mx, my), vMap.position, vMap.width, vMap.height)) {
+        map_zoom += scrollY * 0.01f;
+        map_zoom = max(0.5f, min(map_zoom, 2.f)); // clamp map_zoom
+    }
 }
 
 
@@ -671,4 +765,66 @@ ofVec2f ofApp::restrictPosition(ofVec2f pos, float obj_w, float obj_h, ofRectang
         if (pos.y + obj_h > view.y + view.height) pos.y = view.height - obj_h;
     }
     return pos;
+}
+
+void ofApp::toggleFullscreen(ofRectangle *view){
+    if (fullscreen == true) {
+        setViewportSizes();
+    } else {
+        float w = ofGetWindowWidth();
+        float h = ofGetWindowHeight();
+        float timeslider_height = gTimeGui->getSlider("Time")->getHeight();
+
+        // set all viewport sizes to zero before modifying the chosen viewport's properties
+        // 2D/3D map
+        vMap.x = 0;
+        vMap.y = 0;
+        vMap.width = 0;
+        vMap.height = 0;
+        v3d.x = 0;
+        v3d.y = 0;
+        v3d.width = 0;
+        v3d.height = 0;
+
+        // pairspace
+        vPairspace.x = 0;
+        vPairspace.y = 0;
+        vPairspace.width = 0;
+        vPairspace.height = 0;
+        // selection history
+        vHistory.x = 0;
+        vHistory.y = 0;
+        vHistory.width = 0;
+        vHistory.height = 0;
+        // modelspace
+        vModel.x = 0;
+        vModel.y = 0;
+        vModel.width = 0;
+        vModel.height = 0;
+
+        // set the chosen viewport to fullscreen
+        view->x = 0;
+        view->y = 0;
+        view->width = w;
+        view->height = h - timeslider_height;
+
+        // place the 2D & 3D toggle buttons in the map view
+        button_2d.x = vMap.x + vMap.width - button_3d.width - button_2d.width;
+        button_3d.x = vMap.x + vMap.width - button_3d.width;
+        button_2d.y = vMap.y;
+        button_3d.y = vMap.y;
+        // place the fullscreen button for the map
+        fullscreen_map.x = vMap.x + vMap.width - fullscreen_map.width;
+        fullscreen_map.y = vMap.y + vMap.height - fullscreen_map.height;
+        // place the fullscreen button for the 3d map
+        fullscreen_3d.x = v3d.x + v3d.width - fullscreen_3d.width;
+        fullscreen_3d.y = v3d.y + v3d.height - fullscreen_3d.height;
+
+        // keep the guis in their respective viewports
+        ofVec2f restricted_options_pos = restrictPosition(gOptions->getPosition(),\
+                                                          gOptions->getWidth(), gOptions->getHeight(), vMap);
+        gOptions->setPosition(restricted_options_pos.x, restricted_options_pos.y);
+    }
+    fullscreen = !fullscreen;
+
 }
