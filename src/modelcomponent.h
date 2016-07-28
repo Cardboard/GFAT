@@ -12,11 +12,11 @@
 
 typedef unsigned char uchar;
 
-class Component
+class ModelComponent
 {
 public:
-    Component();
-    ~Component();
+    ModelComponent();
+    ~ModelComponent();
 
     void setInfo(int samples, int lines);
     void setInfo(string name, int samples, int lines);

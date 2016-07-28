@@ -1,6 +1,6 @@
 #include "worm.h"
 #include "compman.h"
-#include "component.h"
+#include "modelcomponent.h"
 
 #ifndef WORMMAN_H
 #define WORMMAN_H

@@ -1,7 +1,7 @@
 #include "ofMain.h"
 #include "ofApp.h"
 
-#include "component.h"
+#include "modelcomponent.h"
 #include "enu.h"
 
 #include "point.h"
@@ -14,7 +14,7 @@ using namespace std;
 
 typedef struct NamedComp {
     string name;
-    Component comp;
+    ModelComponent comp;
 } NamedComp;
 
 

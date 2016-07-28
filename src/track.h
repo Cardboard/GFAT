@@ -1,4 +1,4 @@
-#include "component.h"
+#include "modelcomponent.h"
 
 #include "date.h"
 #include "point.h"

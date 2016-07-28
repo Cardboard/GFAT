@@ -14,10 +14,10 @@ Project{
         files: [
             "src/compman.cpp",
             "src/compman.h",
-            "src/component.cpp",
-            "src/component.h",
             "src/date.h",
             "src/enu.h",
+            "src/modelcomponent.cpp",
+            "src/modelcomponent.h",
             "src/ofxPlots/dataSelectedEvent.cpp",
             "src/ofxPlots/dataSelectedEvent.hpp",
             "src/ofxPlots/interactiveObj.cpp",
@@ -33,9 +33,9 @@ Project{
             "src/worm.h",
             "src/wormman.cpp",
             "src/wormman.h",
-            'src/main.cpp',
-            'src/ofApp.cpp',
-            'src/ofApp.h',
+            "src/main.cpp",
+            "src/ofApp.cpp",
+            "src/ofApp.h",
         ]
 
         // This project is using addons.make to include the addons

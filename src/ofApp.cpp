@@ -15,9 +15,9 @@ void ofApp::setup(){
     map_zoom = 0.5f; // starting zoom for the 2D map
     position.set(0, 0);
     map_mode = 2; // start in 2D mode (change to 3 to start in 3D mode)
-    fullscreen = true; // start in fullscreen mode because we toggle fullscreen at the program's start
+    fullscreen = false;
     hide_all = false;
-    show_tracks = true;
+    show_tracks = false;
     is_selection = false;
     selection_pos.set(-1,-1);
 
@@ -70,18 +70,10 @@ void ofApp::setup(){
     img_gdop.load("gdop_test.png");
     img_gdop.resize(WIDTH, HEIGHT);
 
-    // 2d & 3d toggle buttons
+    // load custom button images
     img_3d_button.load("3dview_button.png");
-    button_3d.width = img_3d_button.getWidth();
-    button_3d.height = img_3d_button.getHeight();
     img_2d_button.load("2dview_button.png");
-    button_2d.width = img_2d_button.getWidth();
-    button_2d.height = img_2d_button.getHeight();
     img_fullscreen.load("fullscreen_button.png");
-    fullscreen_map.width = img_fullscreen.getWidth();
-    fullscreen_map.height = img_fullscreen.getHeight();
-    fullscreen_3d.width = img_fullscreen.getWidth();
-    fullscreen_3d.height = img_fullscreen.getHeight();
 
 
     Date testdate1(2013, 8, 28);
@@ -114,7 +106,6 @@ void ofApp::setup(){
 
     // temporary(?) viewport stuff
     setViewportSizes();
-    toggleFullscreen(&vMap);
 
     img_temp_history.load("selection_history-01.png");
     img_temp_modelspace.load("model_space-01.png");
@@ -223,19 +214,8 @@ void ofApp::setViewportSizes(){
         vModel.height = h * 1/2;
     }
 
-
-
-    // place the 2D & 3D toggle buttons in the map view
-    button_2d.x = vMap.x + vMap.width - button_3d.width - button_2d.width;
-    button_3d.x = vMap.x + vMap.width - button_3d.width;
-    button_2d.y = vMap.y;
-    button_3d.y = vMap.y;
-    // place the fullscreen button for the map
-    fullscreen_map.x = vMap.x + vMap.width - fullscreen_map.width;
-    fullscreen_map.y = vMap.y + vMap.height - fullscreen_map.height;
-    // place the fullscreen button for the 3d map
-    fullscreen_3d.x = v3d.x + v3d.width - fullscreen_3d.width;
-    fullscreen_3d.y = v3d.y + v3d.height - fullscreen_3d.height;
+    // we need to update the button positions now that the viewports have changed sizes
+    setupButtons();
 
     // keep the guis in their respective viewports
     ofVec2f restricted_options_pos = restrictPosition(gOptions->getPosition(),\
@@ -329,7 +309,6 @@ void ofApp::setupGui(){
     gMapLayers->onToggleEvent([&](ofxDatGuiToggleEvent e) {
         if (e.target->is("   Tracks")) {
             show_tracks = e.checked;
-            cout << show_tracks << endl;
         } else if (e.target->is("   LOS Displacement")) {
             show_losdisp = e.checked;
         } else if (e.target->is("   Azimuth Displacement")) {
@@ -437,6 +416,100 @@ void ofApp::setupGui(){
 }
 
 //--------------------------------------------------------------
+// place the 2D & 3D toggle buttons in the map view
+void ofApp::setupButtons(){
+    setupButton(&button_3d, &img_3d_button, &vMap, TOP_RIGHT, true, 3); // place in top-right corner of vMap
+    setupButton(&button_2d, &img_2d_button, &button_3d, LEFT, false, 3); // place to left of button_3d
+    setupButton(&fullscreen_map, &img_fullscreen, &vMap, BOTTOM_RIGHT, true, 3); // place in bottom-right corner of vMap
+}
+
+void ofApp::setupButton(ofRectangle *rect, ofImage *img, ofRectangle *ref, direction dir, bool is_viewport, int padding){
+    // set the button's width and height based on the image's width and height
+    rect->width = img->getWidth();
+    rect->height = img->getHeight();
+    // place the button according to the given direction, relative to a viewport
+    if (is_viewport) {
+        switch(dir) {
+            // anchor the button to one of the view's sides or corners
+            case LEFT:
+                rect->x = ref->x + padding;
+                rect->y = ref->y + ref->height;
+                break;
+            case TOP_LEFT:
+                rect->x = ref->x;
+                rect->y = ref->y;
+                break;
+            case TOP:
+                rect->x = ref->x + ref->width/2 - rect->width/2;
+                rect->y = ref->y + padding;
+                break;
+            case TOP_RIGHT:
+                rect->x = ref->x + ref->width - rect->width - padding;
+                rect->y = ref->y;
+                break;
+            case RIGHT:
+                rect->x = ref->x + ref->width - rect->width - padding;
+                rect->y = ref->y + ref->height/2 - rect->height/2;
+                break;
+            case BOTTOM_RIGHT:
+                rect->x = ref->x + ref->width - rect->width - padding;
+                rect->y = ref->y + ref->height - rect->height - padding;
+                break;
+            case BOTTOM:
+                rect->x = ref->x + ref->width/2 - rect->width/2;
+                rect->y = ref->y + ref->height - rect->height - padding;
+                break;
+            case BOTTOM_LEFT:
+                rect->x = ref->x + padding;
+                rect->y = ref->y + ref->height - rect->height - padding;
+                break;
+        }
+    // place the button according to the given direction, relative to another button (or rectangle)
+    } else {
+        switch(dir) {
+            // unlike with the viewport, we place the button in the specified direction of the reference rectangle,
+            // rather than in a viewport's corner
+            case LEFT:
+                rect->x = ref->x - rect->width - padding;
+                rect->y = ref->y;
+                break;
+            case TOP_LEFT:
+                rect->x = ref->x - rect->width - padding;
+                rect->y = ref->y - rect->height - padding;
+                break;
+            case TOP:
+                rect->x = ref->x;
+                rect->y = ref->y - rect->height - padding;
+                break;
+            case TOP_RIGHT:
+                rect->x = ref->x + ref->width + padding;
+                rect->y = ref->y - rect->height - padding;
+                break;
+            case RIGHT:
+                rect->x = ref->x + rect->width + padding;
+                rect->y = ref->y;
+                break;
+            case BOTTOM_RIGHT:
+                rect->x = ref->x + rect->width + padding;
+                rect->y = ref->y + rect->height + padding;
+                break;
+            case BOTTOM:
+                rect->x = ref->x;
+                rect->y = ref->y + ref->height + padding;
+                break;
+            case BOTTOM_LEFT:
+                rect->x = ref->x - rect->width - padding;
+                rect->y = ref->y + ref->height + padding;
+                break;
+        }
+    }
+    // we neet to round the pixel locations because drawing at a float (x, y) causes the image
+    // to be distorted
+    rect->x = (int) rect->x;
+    rect->y = (int) rect->y;
+}
+
+//--------------------------------------------------------------
 void ofApp::setup3dTopo(){
     position_3d = ofVec2f(946/2.f, 1558.f/2.f); // starting point is the center of the mesh
     rotation_3d = 0.f;
@@ -478,6 +551,7 @@ void ofApp::setup3dTopo(){
     setCameraPosition();
 }
 
+//--------------------------------------------------------------
 void ofApp::setCameraPosition(){
     ofVec3f camDirection(0, 1, 1);
     ofVec3f centre(position_3d.x, position_3d.y, 255/2.f);
@@ -558,9 +632,7 @@ void ofApp::draw(){
         gui->draw();
         gOptions->draw();
         // draw buttons
-        drawButton(&img_3d_button, &button_3d.position, map_mode == 3);
-        drawButton(&img_2d_button, &button_2d.position, map_mode == 2);
-        drawButton(&img_fullscreen, &fullscreen_map.position, fullscreen == true);
+        drawButtons();
     }
 
 
@@ -592,17 +664,29 @@ void ofApp::draw(){
     ofPopView();
 }
 
-void ofApp::drawButton(ofImage *img, ofPoint *pos, bool colored){
+//--------------------------------------------------------------
+void ofApp::drawButton(ofImage *img, ofRectangle *rect, bool colored){
     if (colored) {
         ofSetColor(ofColor::aqua);
-        img->draw(*pos);
+        img->draw(rect->position);
         ofSetColor(255);
     } else {
-        img->draw(*pos);
+        ofSetColor(255,255,255,100);
+        img->draw(rect->position);
+        ofSetColor(255);
     }
 }
 
+//--------------------------------------------------------------
+void ofApp::drawButtons() {
+    // draw all buttons, and color them as "on" or "off" depending on if the boolean expression is true or false
+    drawButton(&img_2d_button, &button_2d, map_mode == 2);
+    drawButton(&img_3d_button, &button_3d, map_mode == 3);
+    drawButton(&img_fullscreen, &fullscreen_map, fullscreen == true);
+}
 
+
+//--------------------------------------------------------------
 void ofApp::drawViewportOutline(const ofRectangle & viewport){
     ofPushStyle();
     ofFill();
@@ -615,7 +699,6 @@ void ofApp::drawViewportOutline(const ofRectangle & viewport){
     ofDrawRectangle(viewport);
     ofPopStyle();
 }
-
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
@@ -755,6 +838,7 @@ void ofApp::mousePressed(int x, int y, int button){
 
 }
 
+//--------------------------------------------------------------
 void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY){
     float mx = ofGetMouseX();
     float my = ofGetMouseY();
@@ -768,7 +852,6 @@ void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY){
         }
     }
 }
-
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
@@ -791,11 +874,10 @@ void ofApp::windowResized(int w, int h){
     timeslider->setWidth(ofGetWindowWidth(), 0.05);
     // resize all of the viewports
     setViewportSizes();
+    fullscreen = false;
 
     // make sure the map is within the newly-resized viewport
     position = restrictPosition(position, WIDTH, HEIGHT, vMap);
-    //CM.setPos(position);
-    //WM.pos.set(position);
 }
 
 //--------------------------------------------------------------
@@ -827,6 +909,7 @@ bool ofApp::isPointInRect(ofVec2f checkpt, ofVec2f pt, float w, float h){
     return false;
 }
 
+//--------------------------------------------------------------
 ofVec2f ofApp::restrictPosition(ofVec2f pos, float obj_w, float obj_h, ofRectangle view){
     // restrain the map to the viewport's edges
     if (obj_w > view.width) {
@@ -848,6 +931,7 @@ ofVec2f ofApp::restrictPosition(ofVec2f pos, float obj_w, float obj_h, ofRectang
     return pos;
 }
 
+//--------------------------------------------------------------
 void ofApp::toggleFullscreen(ofRectangle *view){
     if (fullscreen == true) {
         setViewportSizes();
@@ -889,17 +973,8 @@ void ofApp::toggleFullscreen(ofRectangle *view){
         view->width = w;
         view->height = h - timeslider_height;
 
-        // place the 2D & 3D toggle buttons in the map view
-        button_2d.x = vMap.x + vMap.width - button_3d.width - button_2d.width;
-        button_3d.x = vMap.x + vMap.width - button_3d.width;
-        button_2d.y = vMap.y;
-        button_3d.y = vMap.y;
-        // place the fullscreen button for the map
-        fullscreen_map.x = vMap.x + vMap.width - fullscreen_map.width;
-        fullscreen_map.y = vMap.y + vMap.height - fullscreen_map.height;
-        // place the fullscreen button for the 3d map
-        fullscreen_3d.x = v3d.x + v3d.width - fullscreen_3d.width;
-        fullscreen_3d.y = v3d.y + v3d.height - fullscreen_3d.height;
+        // refresh the button placement now that viewport sizes have changed size
+        setupButtons();
 
         // keep the guis in their respective viewports
         ofVec2f restricted_options_pos = restrictPosition(gOptions->getPosition(),\

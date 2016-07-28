@@ -1,13 +1,13 @@
-#include "component.h"
+#include "modelcomponent.h"
 
-Component::Component ()
+ModelComponent::ModelComponent ()
 {
 }
 
-Component::~Component() {
+ModelComponent::~ModelComponent() {
 }
 
-void Component::setInfo(string n, int s, int l)
+void ModelComponent::setInfo(string n, int s, int l)
 {
     // set array-related variables
     name = n;
@@ -28,32 +28,32 @@ void Component::setInfo(string n, int s, int l)
   click_i_y = -1;
 }
 
-void Component::setInfo(int w, int h)
+void ModelComponent::setInfo(int w, int h)
 {
     name = "unnamed";
 
     setInfo(w, h);
 }
 
-void Component::setPos(float x, float y) {
+void ModelComponent::setPos(float x, float y) {
     pos.x = x;
     pos.y = y;
 }
 
 // TODO: set scale and whatnot
-void Component::setSize(int w, int h) {
+void ModelComponent::setSize(int w, int h) {
     width = w;
     height = h;
 }
 
 // sets size proportionatelly based on given width
-void Component::setSize(int w) {
+void ModelComponent::setSize(int w) {
     width = w;
     scale = samples / w;
     height = lines / scale;
 }
 
-void Component::checkClicks(int x, int y) {
+void ModelComponent::checkClicks(int x, int y) {
     // first check if somewhere on the image's rectangle was clicked
     if (x > pos.x && x < pos.x + width && y > pos.y && y < pos.y + height) {
         // now check if a non-nan value was clicked, taking scale into account
@@ -78,7 +78,7 @@ void Component::checkClicks(int x, int y) {
    }
 }
 
-void Component::highlightPixel() {
+void ModelComponent::highlightPixel() {
     //ofSetColor(ofColor(150, 240, 100));
     //ofDrawCircle(click_pos.x, click_pos.y, );
     //ofSetColor(ofColor(255,255,255));
@@ -86,7 +86,7 @@ void Component::highlightPixel() {
     //overlay.update();
 }
 
-float Component::getValue(float x, float y) {
+float ModelComponent::getValue(float x, float y) {
     if (x > pos.x && x < pos.x + width && y > pos.y && y < pos.y + height) {
         float rel_x = x - pos.x;
         float rel_y = y - pos.y;
@@ -99,7 +99,7 @@ float Component::getValue(float x, float y) {
     return 0; // val == nan (returning this shouldn't be possible since we kill worms that touch nan values)
 }
 
-float Component::getValue(ofVec2f pt) {
+float ModelComponent::getValue(ofVec2f pt) {
     if (pt.x > pos.x && pt.x < pos.x + width && pt.y > pos.y && pt.y < pos.y + height) {
         float rel_x = pt.x - pos.x;
         float rel_y = pt.y - pos.y;
@@ -112,7 +112,7 @@ float Component::getValue(ofVec2f pt) {
     return 0; // val == nan (returning this shouldn't be possible since we kill worms that touch nan values)
 }
 
-void Component::circlePixels() {
+void ModelComponent::circlePixels() {
     if (click_i_x != -1 && click_i_y != -1) {
         float val = array[click_i_y][click_i_x];
         /*
@@ -133,7 +133,7 @@ void Component::circlePixels() {
     }
 }
 
-void Component::loadAndConvert(string filename)
+void ModelComponent::loadAndConvert(string filename)
 {
     ifstream file(filename, ios::ate | ios::binary);
 
@@ -176,7 +176,7 @@ void Component::loadAndConvert(string filename)
     file.close();
 }
 
-void Component::setupImage() {
+void ModelComponent::setupImage() {
     img.allocate(samples, lines, OF_IMAGE_COLOR_ALPHA);
     overlay.allocate(samples, lines, OF_IMAGE_COLOR_ALPHA);
     overlay.setColor(ofColor(0,0,0,0));

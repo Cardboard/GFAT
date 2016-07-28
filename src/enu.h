@@ -1,4 +1,4 @@
-#include "component.h"
+#include "modelcomponent.h"
 
 #ifndef ENU_H
 #define ENU_H

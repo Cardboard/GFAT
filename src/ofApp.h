@@ -5,7 +5,7 @@
 #include "ofxDatGui.h"
 #include "ofxPlots/ofxPlot.hpp"
 
-#include "component.h"
+#include "modelcomponent.h"
 #include "compman.h"
 #include "wormman.h"
 #include "track.h"
@@ -20,17 +20,21 @@ using namespace std;
 class ofApp : public ofBaseApp{
 
 public:
+    enum direction {LEFT, TOP, RIGHT, BOTTOM, TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT};
+
     void setup();
     void update();
     void draw();
 
     void setupGui();
+    void setupButton(ofRectangle *rect, ofImage *img, ofRectangle *ref, direction dir, bool is_viewport, int padding);
+    void setupButtons();
     void setup3dTopo();
     void setCameraPosition();
     void setViewportSizes();
     void drawViewportOutline(const ofRectangle & viewport);
-    void drawButton(ofImage *img, ofPoint *pos, bool colored);
-
+    void drawButton(ofImage *img, ofRectangle *rect, bool colored);
+    void drawButtons();
 
 
     void keyPressed(int key);
@@ -45,6 +49,7 @@ public:
     void windowResized(int w, int h);
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
+
 
     //
     ofVec2f posToScaledPos(ofVec2f pt);
@@ -89,14 +94,19 @@ public:
     bool fullscreen; // true when any view is in fullscreen mode
     bool hide_all; // hides all GUI windows and buttons
     bool is_selection;
+    int map_mode; // either 2 (for 2D) or 3 (for 3D)
+
+    // CUSTOM BUTTONS
+    // button images
     ofImage img_3d_button;
     ofImage img_2d_button;
     ofImage img_fullscreen;
+    // button rectangles
     ofRectangle button_2d;
     ofRectangle button_3d;
     ofRectangle fullscreen_map;
     ofRectangle fullscreen_3d;
-    int map_mode; // either 2 (for 2D) or 3 (for 3D)
+
 
     ofImage img_temp_history;
     ofImage img_temp_modelspace;

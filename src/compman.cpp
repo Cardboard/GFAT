@@ -35,7 +35,7 @@ void CompMan::setPos(ofVec2f pt) {
 
 // TODO make sure we don't add a component with the same name & time as an existent component
 void CompMan::addComponent(string name, string filename) {
-    Component newComp;
+    ModelComponent newComp;
     newComp.setInfo(name, samples, lines);
     newComp.setPos(0, 0);
     newComp.setSize(width);
