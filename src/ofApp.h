@@ -29,6 +29,8 @@ public:
     void setCameraPosition();
     void setViewportSizes();
     void drawViewportOutline(const ofRectangle & viewport);
+    void drawButton(ofImage *img, ofPoint *pos, bool colored);
+
 
 
     void keyPressed(int key);
@@ -73,6 +75,9 @@ public:
     int HEIGHT; // scaled height of scalar components
     int SCALE;
     ofVec2f position;
+    ofVec2f position_3d;
+    float rotation_3d;
+    ofVec2f selection_pos;
 
     ofImage img_topo;
     ofImage img_gdop;
@@ -82,6 +87,8 @@ public:
 
     // extra buttons not on a particular ofxDatGui
     bool fullscreen; // true when any view is in fullscreen mode
+    bool hide_all; // hides all GUI windows and buttons
+    bool is_selection;
     ofImage img_3d_button;
     ofImage img_2d_button;
     ofImage img_fullscreen;
