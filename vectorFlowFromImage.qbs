@@ -26,7 +26,6 @@ Project{
             "src/ofxPlots/ofxPlot.hpp",
             "src/ofxPlots/ofxPlotArrow.cpp",
             "src/ofxPlots/ofxPlotArrow.hpp",
-            "src/point.h",
             "src/track.cpp",
             "src/track.h",
             "src/worm.cpp",

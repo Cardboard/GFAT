@@ -4,7 +4,6 @@
 #include "modelcomponent.h"
 #include "enu.h"
 
-#include "point.h"
 #include "date.h"
 
 #ifndef COMPMAN_H

@@ -1,7 +1,6 @@
 #include "modelcomponent.h"
 
 #include "date.h"
-#include "point.h"
 
 #ifndef TRACK_H
 #define TRACK_H

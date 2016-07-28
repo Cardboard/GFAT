@@ -5,8 +5,6 @@
 #include <vector>
 #include <fstream>
 
-#include "point.h"
-
 #ifndef Component_H
 #define Component_H
 
