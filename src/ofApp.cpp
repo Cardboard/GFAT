@@ -456,9 +456,9 @@ void ofApp::setup3dTopo(){
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             px_height = max(0.0f, heightmap.getColor(x, y).getBrightness());
-            //px_color = 8 * px_height;
+            //px_color = 255.f - min(255.f, 8 * px_height);
             topo3d.addVertex(ofPoint(x, y, px_height * extrusionAmount));
-            //topo3d.addColor(ofColor(150, (int) px_color % 150 + 105, 150));
+            //topo3d.addColor(ofColor(150, px_color, 150));
             topo3d.addTexCoord(ofVec2f(x, y));
         }
     }
@@ -491,7 +491,7 @@ void ofApp::setCameraPosition(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    // ========= DRAW WORMS TO A BUFFER ========
+    // ========= DRAW WORMS TO A BUFFER (for the MAP VIEWPORT) ========
     drawViewportOutline(vMap);
     ofPushView();
     ofViewport(vMap);
@@ -545,6 +545,7 @@ void ofApp::draw(){
     // ========= 3D WORMPLOT ========
     } else if (map_mode == 3) {
         cam.begin(vMap);
+
             map_buffer.getTexture().bind();
             topo3d.draw();
             map_buffer.getTexture().unbind();
