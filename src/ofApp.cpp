@@ -439,48 +439,48 @@ void ofApp::setupPlots(){
 //--------------------------------------------------------------
 void ofApp::setupButtons(){
     // fullscreen toggle buttons
-    setupButton(&btn_fullscreen_map, "fullscreen_button.png", &vMap, BOTTOM_RIGHT, true, 3);
-    setupButton(&btn_fullscreen_model, "fullscreen_button.png", &vModel, BOTTOM_RIGHT, true, 3);
+    setupButton(&btn_fullscreen_map, "icons/fullscreen_button.png", &vMap, BOTTOM_RIGHT, true, 3);
+    setupButton(&btn_fullscreen_model, "icons/fullscreen_button.png", &vModel, BOTTOM_RIGHT, true, 3);
 
     // model buttons
-    setupButton(&btn_model_p3, "model_p3.png", &vMap, TOP_RIGHT, true, 3);
-    setupButton(&btn_model_p2, "model_p2.png", &btn_model_p3.rect, LEFT, false, 2);
-    setupButton(&btn_model_p1, "model_p1.png", &btn_model_p2.rect, LEFT, false, 2);
-    setupButton(&btn_model_vel, "model_vel.png", &btn_model_p1.rect, LEFT, false, 2);
-    setupButton(&btn_model, "model.png", &btn_model_vel.rect, LEFT, false, 3);
+    setupButton(&btn_model_p3, "icons/model_p3.png", &vMap, TOP_RIGHT, true, 3);
+    setupButton(&btn_model_p2, "icons/model_p2.png", &btn_model_p3.rect, LEFT, false, 2);
+    setupButton(&btn_model_p1, "icons/model_p1.png", &btn_model_p2.rect, LEFT, false, 2);
+    setupButton(&btn_model_vel, "icons/model_vel.png", &btn_model_p1.rect, LEFT, false, 2);
+    setupButton(&btn_model, "icons/model.png", &btn_model_vel.rect, LEFT, false, 3);
 
     // 2d/3d toggle buttons
-    setupButton(&btn_3d, "3dview_button.png", &btn_fullscreen_map.rect, LEFT, false, 5);
-    setupButton(&btn_2d, "2dview_button.png", &btn_3d.rect, LEFT, false, 0);
+    setupButton(&btn_3d, "icons/3dview_button.png", &btn_fullscreen_map.rect, LEFT, false, 5);
+    setupButton(&btn_2d, "icons/2dview_button.png", &btn_3d.rect, LEFT, false, 0);
 
     // layer buttons
-    setupButton(&btn_layers_contour, "layers_contour.png", &btn_model_p3.rect, BOTTOM, false, 5);
-    setupButton(&btn_layers_gdop, "layers_gdop.png", &btn_layers_contour.rect, LEFT, false, 3);
-    setupButton(&btn_layers_heightmap, "layers_heightmap.png", &btn_layers_gdop.rect, LEFT, false, 3);
-    setupButton(&btn_layers, "layers.png", &btn_layers_heightmap.rect, LEFT, false, 3);
+    setupButton(&btn_layers_contour, "icons/layers_contour.png", &btn_model_p3.rect, BOTTOM, false, 5);
+    setupButton(&btn_layers_gdop, "icons/layers_gdop.png", &btn_layers_contour.rect, LEFT, false, 3);
+    setupButton(&btn_layers_heightmap, "icons/layers_heightmap.png", &btn_layers_gdop.rect, LEFT, false, 3);
+    setupButton(&btn_layers, "icons/layers.png", &btn_layers_heightmap.rect, LEFT, false, 3);
 
     // settings buttons
-    setupButton(&btn_settings_density_high, "settings_dhigh.png", &btn_layers_contour.rect, BOTTOM, false, 5);
-    setupButton(&btn_settings_density_med, "settings_dmed.png", &btn_settings_density_high.rect, LEFT, false, 0);
-    setupButton(&btn_settings_density_low, "settings_dlow.png", &btn_settings_density_med.rect, LEFT, false, 0);
-    setupButton(&btn_settings_size_large, "settings_large.png", &btn_settings_density_low.rect, LEFT, false, 3);
-    setupButton(&btn_settings_size_med, "settings_med.png", &btn_settings_size_large.rect, LEFT, false, 0);
-    setupButton(&btn_settings_size_small, "settings_small.png", &btn_settings_size_med.rect, LEFT, false, 0);
-    setupButton(&btn_settings_selection, "settings_selection.png", &btn_settings_size_small.rect, LEFT, false, 3);
-    setupButton(&btn_settings_worm, "settings_worm.png", &btn_settings_selection.rect, LEFT, false, 0);
-    setupButton(&btn_settings, "settings.png", &btn_settings_worm.rect, LEFT, false, 3);
+    setupButton(&btn_settings_density_high, "icons/settings_dhigh.png", &btn_layers_contour.rect, BOTTOM, false, 5);
+    setupButton(&btn_settings_density_med, "icons/settings_dmed.png", &btn_settings_density_high.rect, LEFT, false, 0);
+    setupButton(&btn_settings_density_low, "icons/settings_dlow.png", &btn_settings_density_med.rect, LEFT, false, 0);
+    setupButton(&btn_settings_size_large, "icons/settings_large.png", &btn_settings_density_low.rect, LEFT, false, 3);
+    setupButton(&btn_settings_size_med, "icons/settings_med.png", &btn_settings_size_large.rect, LEFT, false, 0);
+    setupButton(&btn_settings_size_small, "icons/settings_small.png", &btn_settings_size_med.rect, LEFT, false, 0);
+    setupButton(&btn_settings_selection, "icons/settings_selection.png", &btn_settings_size_small.rect, LEFT, false, 3);
+    setupButton(&btn_settings_worm, "icons/settings_worm.png", &btn_settings_selection.rect, LEFT, false, 0);
+    setupButton(&btn_settings, "icons/settings.png", &btn_settings_worm.rect, LEFT, false, 3);
 
     // worm preset buttons
-    setupButton(&btn_worms_eul_disp, "worms_disp.png", &btn_settings_density_high.rect, BOTTOM, false, 5);
-    setupButton(&btn_worms_eul_dots, "worms_dots.png", &btn_worms_eul_disp.rect, LEFT, false, 0);
-    setupButton(&btn_worms_lag_dots, "worms_dots.png", &btn_worms_eul_disp.rect, LEFT, false, 0);
-    setupButton(&btn_worms_eul_lines, "worms_lines.png", &btn_worms_eul_dots.rect, LEFT, false, 0);
-    setupButton(&btn_worms_lag_lines, "worms_lines.png", &btn_worms_eul_dots.rect, LEFT, false, 0);
-    setupButton(&btn_worms_eul_worms, "worms_worms.png", &btn_worms_eul_lines.rect, LEFT, false, 0);
-    setupButton(&btn_worms_lag_worms, "worms_worms.png", &btn_worms_eul_lines.rect, LEFT, false, 0);
-    setupButton(&btn_worms_up, "worms_up.png", &btn_worms_eul_worms.rect, LEFT, false, 3);
-    setupButton(&btn_worms_eul, "worms_eul.png", &btn_worms_up.rect, LEFT, false, 3);
-    setupButton(&btn_worms_lag, "worms_lag.png", &btn_worms_eul.rect, LEFT, false, 0);
+    setupButton(&btn_worms_eul_disp, "icons/worms_disp.png", &btn_settings_density_high.rect, BOTTOM, false, 5);
+    setupButton(&btn_worms_eul_dots, "icons/worms_dots.png", &btn_worms_eul_disp.rect, LEFT, false, 0);
+    setupButton(&btn_worms_lag_dots, "icons/worms_dots.png", &btn_worms_eul_disp.rect, LEFT, false, 0);
+    setupButton(&btn_worms_eul_lines, "icons/worms_lines.png", &btn_worms_eul_dots.rect, LEFT, false, 0);
+    setupButton(&btn_worms_lag_lines, "icons/worms_lines.png", &btn_worms_eul_dots.rect, LEFT, false, 0);
+    setupButton(&btn_worms_eul_worms, "icons/worms_worms.png", &btn_worms_eul_lines.rect, LEFT, false, 0);
+    setupButton(&btn_worms_lag_worms, "icons/worms_worms.png", &btn_worms_eul_lines.rect, LEFT, false, 0);
+    setupButton(&btn_worms_up, "icons/worms_up.png", &btn_worms_eul_worms.rect, LEFT, false, 3);
+    setupButton(&btn_worms_eul, "icons/worms_eul.png", &btn_worms_up.rect, LEFT, false, 3);
+    setupButton(&btn_worms_lag, "icons/worms_lag.png", &btn_worms_eul.rect, LEFT, false, 0);
 }
 
 //--------------------------------------------------------------
