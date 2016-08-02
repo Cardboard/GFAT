@@ -70,7 +70,7 @@ void Worm::draw(ofVec2f offset)
     */
 
     if (include_up == 1) {
-        float up_scale = max(1.f, 10.f * abs(enu.up));
+        float up_scale = max(1.f, 4 * abs(enu.up));
         // don't draw worms that haven't moved at all yet
         if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
             ofSetColor(0, 0, 0, 0);
@@ -89,7 +89,7 @@ void Worm::draw(ofVec2f offset)
             }
 
         }
-        ofDrawCircle(x, y, up_scale * size);
+        ofDrawCircle(x, y, up_scale * scaled_size);
     } else {
         // don't draw worms that haven't moved at all yet
         if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
@@ -170,7 +170,7 @@ void Worm::setENU(ENU e)
             if (mode == 1 && opaque == true) {
                 float magstart = sqrt(startenu.up * startenu.up + startenu.east*startenu.east + startenu.north*startenu.north);
                 float diff = magstart - mag;
-                float scaledcolor = min(255.0, (abs(diff) / (0.6 / (230.0 - 25.0))) + 25.0);
+                float scaledcolor = min(255.0, (abs(diff) / (2.7 / (230.0 - 25.0))) + 25.0);
                 if (magstart > mag) {
                     color = RGB(scaledcolor, 0, 0);
                 } else if (magstart < mag) {
@@ -179,10 +179,10 @@ void Worm::setENU(ENU e)
                     color = RGB(40, 40, 40);
                 }
             } else {
-                float rangedH =  (mag / ((1.6 - 0.0) / (420.0 - 320.0))) + 320.0;
+                float rangedH =  (mag / ((2.7 - 0.0) / (420.0 - 320.0))) + 320.0;
                 if (rangedH > 360) rangedH -= 360;
-                float rangedS =  (mag / ((1.6 - 0.0) / (1.0 - 0.62))) + 0.62;
-                float rangedL =  (mag / ((1.6 - 0.0) / (0.86 - 0.29))) + 0.29;
+                float rangedS =  (mag / ((2.7 - 0.0) / (1.0 - 0.62))) + 0.62;
+                float rangedL =  (mag / ((2.7 - 0.0) / (0.86 - 0.29))) + 0.29;
 
                 color = hslToRgb(rangedH, rangedS, rangedL);
             }

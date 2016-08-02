@@ -161,25 +161,25 @@ void WormMan::wormPreset(string name) {
         } else if (mode == 1) {
             if (density_preset == 0) {
                 if (worm_size == 2)
-                    setWormDensity(0.01);
+                    setWormDensity(0.15);
                 else if (worm_size == 5)
-                    setWormDensity(0.08);
-                else if (worm_size == 10);
-                    setWormDensity(0.18);
+                    setWormDensity(0.35);
+                else if (worm_size == 10)
+                    setWormDensity(0.50);
             } else if (density_preset == 1) {
                 if (worm_size == 2)
-                    setWormDensity(0.04);
+                    setWormDensity(0.25);
                 else if (worm_size == 5)
-                    setWormDensity(0.12);
-                else if (worm_size == 10);
-                    setWormDensity(0.26);
+                    setWormDensity(0.50);
+                else if (worm_size == 10)
+                    setWormDensity(0.70);
             } else if (density_preset == 2) {
                 if (worm_size == 2)
-                    setWormDensity(0.10);
+                    setWormDensity(0.40);
                 else if (worm_size == 5)
-                    setWormDensity(0.20);
-                else if (worm_size == 10);
-                    setWormDensity(0.35);
+                    setWormDensity(0.60);
+                else if (worm_size == 10)
+                    setWormDensity(0.85);
             }
             setWormLifespan(0);
             setWormTailSize(50);
@@ -204,25 +204,25 @@ void WormMan::wormPreset(string name) {
         } else if (mode == 1) {
             if (density_preset == 0) {
                 if (worm_size == 2)
-                    setWormDensity(0.03);
+                    setWormDensity(0.15);
                 else if (worm_size == 5)
-                    setWormDensity(0.08);
-                else if (worm_size == 10);
-                    setWormDensity(0.18);
+                    setWormDensity(0.35);
+                else if (worm_size == 10)
+                    setWormDensity(0.50);
             } else if (density_preset == 1) {
                 if (worm_size == 2)
-                    setWormDensity(0.08);
+                    setWormDensity(0.25);
                 else if (worm_size == 5)
-                    setWormDensity(0.12);
-                else if (worm_size == 10);
-                    setWormDensity(0.26);
+                    setWormDensity(0.50);
+                else if (worm_size == 10)
+                    setWormDensity(0.70);
             } else if (density_preset == 2) {
                 if (worm_size == 2)
-                    setWormDensity(0.16);
+                    setWormDensity(0.40);
                 else if (worm_size == 5)
-                    setWormDensity(0.20);
-                else if (worm_size == 10);
-                    setWormDensity(0.35);
+                    setWormDensity(0.60);
+                else if (worm_size == 10)
+                    setWormDensity(0.85);
             }
             setWormLifespan(0);
             setWormTailSize(100);
@@ -244,12 +244,28 @@ void WormMan::wormPreset(string name) {
             setOpaque(false);
             setArrowMode(0);
         } else if (mode == 1) {
-            if (density_preset == 0)
-                setWormDensity(0.0075 * worm_size);
-            else if (density_preset == 1)
-                setWormDensity(0.03 * worm_size);
-            else if (density_preset == 2)
-                setWormDensity(0.05 * worm_size);
+            if (density_preset == 0) {
+                if (worm_size == 2)
+                    setWormDensity(0.15);
+                else if (worm_size == 5)
+                    setWormDensity(0.35);
+                else if (worm_size == 10)
+                    setWormDensity(0.50);
+            } else if (density_preset == 1) {
+                if (worm_size == 2)
+                    setWormDensity(0.25);
+                else if (worm_size == 5)
+                    setWormDensity(0.50);
+                else if (worm_size == 10)
+                    setWormDensity(0.70);
+            } else if (density_preset == 2) {
+                if (worm_size == 2)
+                    setWormDensity(0.40);
+                else if (worm_size == 5)
+                    setWormDensity(0.60);
+                else if (worm_size == 10)
+                    setWormDensity(0.85);
+            }
             setWormLifespan(0);
             setWormTailSize(1);
             setWormSpeed(60);
@@ -257,12 +273,28 @@ void WormMan::wormPreset(string name) {
             setArrowMode(0);
         }
     } else if (name == "disp" && mode == 1) {
-        if (density_preset == 0)
-            setWormDensity(0.01 * worm_size);
-        else if (density_preset == 1)
-            setWormDensity(0.025 * worm_size);
-        else if (density_preset == 2)
-            setWormDensity(0.035 * worm_size);
+        if (density_preset == 0) {
+            if (worm_size == 2)
+                setWormDensity(0.50);
+            else if (worm_size == 5)
+                setWormDensity(0.85);
+            else if (worm_size == 10)
+                setWormDensity(1.0);
+        } else if (density_preset == 1) {
+            if (worm_size == 2)
+                setWormDensity(0.75);
+            else if (worm_size == 5)
+                setWormDensity(1.15);
+            else if (worm_size == 10)
+                setWormDensity(1.3);
+        } else if (density_preset == 2) {
+            if (worm_size == 2)
+                setWormDensity(1.0);
+            else if (worm_size == 5)
+                setWormDensity(1.3);
+            else if (worm_size == 10)
+                setWormDensity(1.5);
+        }
         setWormLifespan(0);
         setWormTailSize(2);
         setWormSpeed(30);

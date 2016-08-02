@@ -942,24 +942,28 @@ void ofApp::mousePressed(int x, int y, int button){
             if (WM.preset != "worms") {
                 WM.preset = "worms";
                 WM.wormPreset(WM.preset);
+                WM.refreshWorms(true);
             }
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_lag_lines)) {
             if (WM.preset != "lines") {
                 WM.preset = "lines";
                 WM.wormPreset(WM.preset);
+                WM.refreshWorms(true);
             }
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_lag_dots)) {
             if (WM.preset != "dots") {
                 WM.preset = "dots";
                 WM.wormPreset(WM.preset);
+                WM.refreshWorms(true);
             }
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_eul_worms)) {
             if (WM.preset != "worms") {
                 WM.preset = "worms";
                 WM.wormPreset(WM.preset);
+                WM.refreshWorms(true);
             }
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_eul_lines)) {
@@ -1009,14 +1013,17 @@ void ofApp::mousePressed(int x, int y, int button){
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_size_small)) {
             WM.setWormSize(2);
+            WM.wormPreset(WM.preset);
             WM.refreshWorms(true);
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_size_med)) {
             WM.setWormSize(5);
+            WM.wormPreset(WM.preset);
             WM.refreshWorms(true);
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_size_large)) {
             WM.setWormSize(10);
+            WM.wormPreset(WM.preset);
             WM.refreshWorms(true);
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_density_low)) {
