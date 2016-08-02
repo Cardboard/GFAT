@@ -16,16 +16,10 @@ Project{
             "src/compman.h",
             "src/date.h",
             "src/enu.h",
+            "src/enuplot.cpp",
+            "src/enuplot.h",
             "src/modelcomponent.cpp",
             "src/modelcomponent.h",
-            "src/ofxPlots/dataSelectedEvent.cpp",
-            "src/ofxPlots/dataSelectedEvent.hpp",
-            "src/ofxPlots/interactiveObj.cpp",
-            "src/ofxPlots/interactiveObj.hpp",
-            "src/ofxPlots/ofxPlot.cpp",
-            "src/ofxPlots/ofxPlot.hpp",
-            "src/ofxPlots/ofxPlotArrow.cpp",
-            "src/ofxPlots/ofxPlotArrow.hpp",
             "src/track.cpp",
             "src/track.h",
             "src/worm.cpp",
@@ -34,7 +28,7 @@ Project{
             "src/wormman.h",
             "src/main.cpp",
             "src/ofApp.cpp",
-            "src/ofApp.h",
+            "src/ofApp.h"
         ]
 
         // This project is using addons.make to include the addons
@@ -43,8 +37,7 @@ Project{
         // the list of used addons in array format. eg:
         //
         of.addons: [
-            'ofxGui',
-            'ofxDatGui',
+            'ofxDatGui'
         ]
 
         // additional flags for the project. the of module sets some

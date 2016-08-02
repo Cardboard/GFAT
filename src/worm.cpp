@@ -69,28 +69,48 @@ void Worm::draw(ofVec2f offset)
     }
     */
 
-    float up_scale = min(10.f, 20.f * abs(enu.up));
-
-    // don't draw worms that haven't moved at all yet
-    if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
-        ofSetColor(0, 0, 0, 0);
-    } else {
-        // draw outline
-        /*
-        ofSetColor(255);
-        ofNoFill();
-        ofDrawCircle(x, y, up_scale * size);//scaled_size);
-        ofFill();
-        */
-        if (opaque) {
-            ofSetColor(color.red, color.green, color.blue, 255);
+    if (include_up == 1) {
+        float up_scale = max(1.f, 10.f * abs(enu.up));
+        // don't draw worms that haven't moved at all yet
+        if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
+            ofSetColor(0, 0, 0, 0);
         } else {
-            ofSetColor(color.red, color.green, color.blue, min((float)age, alpha));
-        }
+            // draw outline
+            /*
+            ofSetColor(255);
+            ofNoFill();
+            ofDrawCircle(x, y, up_scale * size);
+            ofFill();
+            */
+            if (opaque) {
+                ofSetColor(color.red, color.green, color.blue, 255);
+            } else {
+                ofSetColor(color.red, color.green, color.blue, min((float)age, alpha));
+            }
 
+        }
+        ofDrawCircle(x, y, up_scale * size);
+    } else {
+        // don't draw worms that haven't moved at all yet
+        if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
+            ofSetColor(0, 0, 0, 0);
+        } else {
+            // draw outline
+            /*
+            ofSetColor(255);
+            ofNoFill();
+            ofDrawCircle(x, y, up_scale * size);//scaled_size);
+            ofFill();
+            */
+            if (opaque) {
+                ofSetColor(color.red, color.green, color.blue, 255);
+            } else {
+                ofSetColor(color.red, color.green, color.blue, min((float)age, alpha));
+            }
+        }
+        ofDrawCircle(x, y, scaled_size);
     }
 
-    ofDrawCircle(x, y, scaled_size);
     ofSetColor(255,255,255);
 }
 
@@ -141,30 +161,62 @@ void Worm::setENU(ENU e)
         startenu.north = e.north;
         startenu.up = e.up;
     }
-
     enu = e;
-    // set color based on horizontal magnitude
-    float hmag = sqrt(e.north * e.north + e.east * e.east);
-    if (colormode == 0) {
-        if (mode == 1 && opaque == true) {
-            float hmag = sqrt(enu.east*enu.east + enu.north*enu.north);
-            float hmagstart = sqrt(startenu.east*startenu.east + startenu.north*startenu.north);
-            float diff = hmagstart - hmag;
-            float scaledcolor = min(255.0, (abs(diff) / (0.6 / (230.0 - 25.0))) + 25.0);
-            if (hmagstart > hmag) {
-                color = RGB(scaledcolor, 0, 0);
-            } else if (hmagstart < hmag) {
-                color = RGB(0, 0, scaledcolor);
+
+    if (include_up == 1) {
+        // set color based on total magnitude
+        float mag = sqrt(e.up * e.up + e.north * e.north + e.east * e.east);
+        if (colormode == 0) {
+            if (mode == 1 && opaque == true) {
+                float magstart = sqrt(startenu.up * startenu.up + startenu.east*startenu.east + startenu.north*startenu.north);
+                float diff = magstart - mag;
+                float scaledcolor = min(255.0, (abs(diff) / (0.6 / (230.0 - 25.0))) + 25.0);
+                if (magstart > mag) {
+                    color = RGB(scaledcolor, 0, 0);
+                } else if (magstart < mag) {
+                    color = RGB(0, 0, scaledcolor);
+                } else {
+                    color = RGB(40, 40, 40);
+                }
             } else {
-                color = RGB(40, 40, 40);
+                float rangedH =  (mag / ((1.6 - 0.0) / (420.0 - 320.0))) + 320.0;
+                if (rangedH > 360) rangedH -= 360;
+                float rangedS =  (mag / ((1.6 - 0.0) / (1.0 - 0.62))) + 0.62;
+                float rangedL =  (mag / ((1.6 - 0.0) / (0.86 - 0.29))) + 0.29;
+
+                color = hslToRgb(rangedH, rangedS, rangedL);
             }
-        } else {
-            float rangedhmag =  (hmag / ((1.6 - 0.0) / (360.0 - 260.0))) + 260.0;
-            color = hslToRgb(rangedhmag, 1.0, 0.6);
+        } else if (colormode == 1) {
+            float rangedhmag = min(1.0, 2 * (mag / ((1.6 - 0.0) / (1.0 - 0.0))) + 0.0);
+            color = hslToRgb(0.0, 0.0, rangedhmag);
         }
-    } else if (colormode == 1) {
-        float rangedhmag = min(1.0, 2 * (hmag / ((1.6 - 0.0) / (1.0 - 0.0))) + 0.0);
-        color = hslToRgb(0.0, 0.0, rangedhmag);
+    } else {
+        // set color based on horizontal magnitude
+        float hmag = sqrt(e.north * e.north + e.east * e.east);
+        if (colormode == 0) {
+            if (mode == 1 && opaque == true) {
+                float hmagstart = sqrt(startenu.east*startenu.east + startenu.north*startenu.north);
+                float diff = hmagstart - hmag;
+                float scaledcolor = min(255.0, (abs(diff) / (0.6 / (230.0 - 25.0))) + 25.0);
+                if (hmagstart > hmag) {
+                    color = RGB(scaledcolor, 0, 0);
+                } else if (hmagstart < hmag) {
+                    color = RGB(0, 0, scaledcolor);
+                } else {
+                    color = RGB(40, 40, 40);
+                }
+            } else {
+                float rangedH =  (hmag / ((1.6 - 0.0) / (420.0 - 320.0))) + 320.0;
+                if (rangedH > 360) rangedH -= 360;
+                float rangedS =  (hmag / ((1.6 - 0.0) / (1.0 - 0.62))) + 0.62;
+                float rangedL =  (hmag / ((1.6 - 0.0) / (0.86 - 0.29))) + 0.29;
+
+                color = hslToRgb(rangedH, rangedS, rangedL);
+            }
+        } else if (colormode == 1) {
+            float rangedhmag = min(1.0, 2 * (hmag / ((1.6 - 0.0) / (1.0 - 0.0))) + 0.0);
+            color = hslToRgb(0.0, 0.0, rangedhmag);
+        }
     }
 }
 

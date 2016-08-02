@@ -26,6 +26,7 @@ public:
     void setUniform(bool b);
     void refreshWorms(bool respawn); // removes all worms and respawns them based on the current density
     void drawWorms();
+    bool isValidPos(float mx, float my);
     void createWorm();
     void createWorm(float mx, float my);
     void updateComponents();
@@ -41,8 +42,11 @@ public:
     vector<vector<int>> array;
     ofVec2f pos;
     float clock;
+    string preset;
+    int density_preset;
     int mode;
     bool worm_opaque;
+    int include_up;
     bool colormode; // controls whether worms are b&w or color
     int arrowmode;
     int worm_spawnrate; // used for lagrangian worms only

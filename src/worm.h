@@ -41,6 +41,7 @@ public:
 
     int age;
     int mode;
+    int include_up;
     int lifespan; // when age > lifespan, the worm gets deleted
     float x;
     float y;

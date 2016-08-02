@@ -48,7 +48,7 @@ public:
     int lines;
 
     // function toggling (0: off, 1: on)
-    int secular_enabled;
+    int vel_enabled;
     int p1_enabled;
     int p2_enabled;
     int p3_enabled;

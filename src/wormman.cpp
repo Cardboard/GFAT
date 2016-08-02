@@ -28,12 +28,15 @@ void WormMan::setup(CompMan* compman, string hname, string vname, ofVec2f p)
     scale = horizontalComponent.comp.scale;
     pos.set(ofVec2f(0, 0));
 
+    preset = "worms";
+    density_preset = 0;
     mode = 0;
+    include_up = 0;
     colormode = 0;
     arrowmode = 0;
     worm_spawnrate = 0.5;
     worm_lifespan = 5;
-    worm_size = 5;
+    worm_size = 2;
     worm_tailsize = 5;
     worm_speed = 10;
     spawn_x = -1;
@@ -139,22 +142,47 @@ void WormMan::setUniform(bool b)
 }
 
 void WormMan::wormPreset(string name) {
+    preset = name;
     if (name == "worms") {
         if (mode == 0) {
-            setWormDensity(0.5);
+            if (density_preset == 0)
+                setWormDensity(0.8);
+            else if (density_preset == 1)
+                setWormDensity(1.6);
+            else if (density_preset == 2)
+                setWormDensity(2.0);
             setWormLifespan(50);
             setWormTailSize(50);
-            setWormSize(3);
             setWormSpeed(30);
             setUniform(false);
             setOpaque(false);
             setMode(0);
             setArrowMode(0);
         } else if (mode == 1) {
-            setWormDensity(0.1);
+            if (density_preset == 0) {
+                if (worm_size == 2)
+                    setWormDensity(0.01);
+                else if (worm_size == 5)
+                    setWormDensity(0.08);
+                else if (worm_size == 10);
+                    setWormDensity(0.18);
+            } else if (density_preset == 1) {
+                if (worm_size == 2)
+                    setWormDensity(0.04);
+                else if (worm_size == 5)
+                    setWormDensity(0.12);
+                else if (worm_size == 10);
+                    setWormDensity(0.26);
+            } else if (density_preset == 2) {
+                if (worm_size == 2)
+                    setWormDensity(0.10);
+                else if (worm_size == 5)
+                    setWormDensity(0.20);
+                else if (worm_size == 10);
+                    setWormDensity(0.35);
+            }
             setWormLifespan(0);
             setWormTailSize(50);
-            setWormSize(3);
             setWormSpeed(30);
             setUniform(false);
             setOpaque(false);
@@ -162,49 +190,85 @@ void WormMan::wormPreset(string name) {
         }
     } else if (name == "lines") {
         if (mode == 0) {
+            if (density_preset == 0)
+                setWormDensity(0.1);
+            else if (density_preset == 1)
+                setWormDensity(0.15);
+            else if (density_preset == 2)
+                setWormDensity(0.25);
             setWormLifespan(500);
             setWormTailSize(500);
-            setWormSize(1);
-            setWormSpeed(30);
-            setOpaque(true);
-            setWormDensity(0.1);
-            setArrowMode(0);
-        } else if (mode == 1) {
-            setWormLifespan(0);
-            setWormTailSize(100);
-            setWormSize(1);
             setWormSpeed(30);
             setOpaque(false);
-            setWormDensity(0.025);
+            setArrowMode(0);
+        } else if (mode == 1) {
+            if (density_preset == 0) {
+                if (worm_size == 2)
+                    setWormDensity(0.03);
+                else if (worm_size == 5)
+                    setWormDensity(0.08);
+                else if (worm_size == 10);
+                    setWormDensity(0.18);
+            } else if (density_preset == 1) {
+                if (worm_size == 2)
+                    setWormDensity(0.08);
+                else if (worm_size == 5)
+                    setWormDensity(0.12);
+                else if (worm_size == 10);
+                    setWormDensity(0.26);
+            } else if (density_preset == 2) {
+                if (worm_size == 2)
+                    setWormDensity(0.16);
+                else if (worm_size == 5)
+                    setWormDensity(0.20);
+                else if (worm_size == 10);
+                    setWormDensity(0.35);
+            }
+            setWormLifespan(0);
+            setWormTailSize(100);
+            setWormSpeed(30);
+            setOpaque(false);
             setArrowMode(0);
         }
     } else if (name == "dots") {
         if (mode == 0) {
+            if (density_preset == 0)
+                setWormDensity(0.7);
+            else if (density_preset == 1)
+                setWormDensity(1.2);
+            else if (density_preset == 2)
+                setWormDensity(2.0);
             setWormLifespan(100);
             setWormTailSize(2);
-            setWormSize(2);
-            setWormSpeed(60);
-            setOpaque(true);
-            setArrowMode(0);
-            setWormDensity(1.0);
-        } else if (mode == 1) {
-            setWormLifespan(0);
-            setWormTailSize(1);
-            setWormSize(2);
             setWormSpeed(60);
             setOpaque(false);
             setArrowMode(0);
-            setWormDensity(0.2);
+        } else if (mode == 1) {
+            if (density_preset == 0)
+                setWormDensity(0.0075 * worm_size);
+            else if (density_preset == 1)
+                setWormDensity(0.03 * worm_size);
+            else if (density_preset == 2)
+                setWormDensity(0.05 * worm_size);
+            setWormLifespan(0);
+            setWormTailSize(1);
+            setWormSpeed(60);
+            setOpaque(false);
+            setArrowMode(0);
         }
     } else if (name == "disp" && mode == 1) {
+        if (density_preset == 0)
+            setWormDensity(0.01 * worm_size);
+        else if (density_preset == 1)
+            setWormDensity(0.025 * worm_size);
+        else if (density_preset == 2)
+            setWormDensity(0.035 * worm_size);
         setWormLifespan(0);
         setWormTailSize(2);
-        setWormSize(5);
         setWormSpeed(30);
         setOpaque(true);
         setUniform(true);
         setArrowMode(0);
-        setWormDensity(0.5);
     } else if (name == "arrows" && mode == 1) {
         setWormLifespan(300);
         setWormTailSize(50);
@@ -256,12 +320,29 @@ void WormMan::refreshWorms(bool respawn) // removes or updates current worms wit
                 w->scaled_size = worm_size * w->alpha / 255.0;
                 w->opaque = worm_opaque;
                 w->colormode = colormode;
+                w->include_up = include_up;
                 w->startenu.east = 9999.0;
                 w->startenu.north = 9999.0;
                 w->startenu.up = 9999.0;
             }
         }
     }
+}
+
+bool WormMan::isValidPos(float mx, float my) {
+    if (mx > spawn_x/scale && mx < spawn_xrange/scale && my > spawn_y/scale && my < spawn_yrange/scale) {
+        // convert unscaled position to scaled position
+        float scaledx = (mx) * scale;
+        float scaledy = (my) * scale;
+
+        // only create a worm if it will be on the map
+        if (array[scaledy][scaledx] == 1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    return false;
 }
 
 void WormMan::createWorm()
@@ -288,7 +369,7 @@ void WormMan::createWorm()
             ENU e = cm->solveEquation(ofVec2f(scaledx, scaledy), 0.f);
             float hmag = sqrt(e.east*e.east + e.north*e.north);
             float proportional_lifespan = max(0.f, (float) worm_lifespan - hmag * (worm_lifespan));
-            newWorm.setup(mode, proportional_lifespan, scaledx, scaledy, worm_size);
+            newWorm.setup(mode, (int) proportional_lifespan, scaledx, scaledy, worm_size);
             double scaled_alpha = ((double) i / ((worm_tailsize - 0.0) / (1.0 - 0.0))) + 0.0;
             //newWorm.setENU(e);
             newWorm.alpha = 255.0 - 255.0*scaled_alpha;
@@ -296,6 +377,7 @@ void WormMan::createWorm()
             newWorm.scaled_size = worm_size * newWorm.alpha / 255.0;
             newWorm.opaque = worm_opaque;
             newWorm.colormode = colormode;
+            newWorm.include_up = include_up;
             newWormGroup.push_back(newWorm);
         }
         // add the wormgroup to the WormMan's worm collection
@@ -331,6 +413,7 @@ void WormMan::createWorm(float mx, float my)
                 newWorm.scaled_size = worm_size * newWorm.alpha / 255.0;
                 newWorm.opaque = worm_opaque;
                 newWorm.colormode = colormode;
+                newWorm.include_up = include_up;
                 newWormGroup.push_back(newWorm);
             }
             // add the wormgroup to the WormMan's worm collection

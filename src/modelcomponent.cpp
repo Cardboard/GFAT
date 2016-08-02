@@ -201,7 +201,6 @@ void ModelComponent::setupImage() {
             img.setColor(j, i, color);
         }
     }
-    cout << "setupImage: Done setting up image for '" << name << "'" << endl;
     img.resize(width, height);
     img.update();
     overlay.resize(width, height);

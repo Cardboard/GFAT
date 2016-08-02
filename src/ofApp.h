@@ -1,10 +1,9 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxGui.h"
 #include "ofxDatGui.h"
-#include "ofxPlots/ofxPlot.hpp"
 
+#include "enuplot.h"
 #include "modelcomponent.h"
 #include "compman.h"
 #include "wormman.h"
@@ -13,8 +12,13 @@
 
 #include "date.h"
 
-
 using namespace std;
+
+typedef struct Button {
+    ofRectangle rect;
+    ofImage img;
+    bool hidden = false;
+} Button;
 
 class ofApp : public ofBaseApp{
 
@@ -26,13 +30,15 @@ public:
     void draw();
 
     void setupGui();
-    void setupButton(ofRectangle *rect, ofImage *img, ofRectangle *ref, direction dir, bool is_viewport, int padding);
+    void setupPlots();
+    void setupButton(Button *btn, string filename, ofRectangle *ref, direction dir, bool is_viewport, int padding);
     void setupButtons();
     void setup3dTopo();
     void setCameraPosition();
     void setViewportSizes();
     void drawViewportOutline(const ofRectangle & viewport);
-    void drawButton(ofImage *img, ofRectangle *rect, bool colored);
+    void drawPlots();
+    void drawButton(Button *btn, bool colored, bool visible);
     void drawButtons();
 
 
@@ -54,6 +60,7 @@ public:
     ofVec2f posToScaledPos(ofVec2f pt);
     ofVec2f scaledPosToPos(ofVec2f pt);
     bool isPointInRect(ofVec2f checkpt, ofVec2f pt, float w, float h);
+    bool isButtonClicked(ofVec2f mpos, Button *btn);
     ofVec2f restrictPosition(ofVec2f pos, float obj_w, float obj_h, ofRectangle view);
     void toggleFullscreen(ofRectangle *view);
 
@@ -82,6 +89,7 @@ public:
     ofVec2f position_3d;
     float rotation_3d;
     ofVec2f selection_pos;
+    ofVec2f selection2_pos;
 
     ofImage img_topo;
     ofImage img_gdop;
@@ -94,18 +102,45 @@ public:
     bool hide_all; // hides all GUI windows and buttons
     bool is_selection;
     int map_mode; // either 2 (for 2D) or 3 (for 3D)
+    int mouse_mode; // 0: worm drawing mode, 1: selection mode
 
     // CUSTOM BUTTONS
-    // button images
-    ofImage img_3d_button;
-    ofImage img_2d_button;
-    ofImage img_fullscreen;
-    // button rectangles
-    ofRectangle button_2d;
-    ofRectangle button_3d;
-    ofRectangle fullscreen_map;
-    ofRectangle fullscreen_3d;
+    Button btn_2d;
+    Button btn_3d;
+    Button btn_fullscreen_map;
+    Button btn_fullscreen_model;
 
+    Button btn_model;
+    Button btn_model_vel;
+    Button btn_model_p1;
+    Button btn_model_p2;
+    Button btn_model_p3;
+
+    Button btn_settings;
+    Button btn_settings_worm;
+    Button btn_settings_selection;
+    Button btn_settings_size_small;
+    Button btn_settings_size_med;
+    Button btn_settings_size_large;
+    Button btn_settings_density_low;
+    Button btn_settings_density_med;
+    Button btn_settings_density_high;
+
+    Button btn_worms_lag;
+    Button btn_worms_eul;
+    Button btn_worms_lag_worms;
+    Button btn_worms_lag_lines;
+    Button btn_worms_lag_dots;
+    Button btn_worms_eul_worms;
+    Button btn_worms_eul_lines;
+    Button btn_worms_eul_dots;
+    Button btn_worms_eul_disp;
+    Button btn_worms_up;
+
+    Button btn_layers;
+    Button btn_layers_gdop;
+    Button btn_layers_heightmap;
+    Button btn_layers_contour;
 
     ofImage img_temp_history;
     ofImage img_temp_modelspace;
@@ -147,7 +182,9 @@ public:
     bool show_modelhdisp;
     bool show_gdop;
     bool show_heightmap;
+    bool show_contour;
 
     // PLOTS N THINGS
+    ENUPlot plotENU;
 
 };

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 3.6.0, 2016-07-28T12:41:16. -->
+<!-- Written by QtCreator 3.6.0, 2016-08-01T15:52:53. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -216,7 +216,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qbs.RunConfiguration:vectorFlowFromImage.qtc_Desktop_a9c3c654---Qbs.RC.NameSeparator---vectorFlowFromImage</value>
     <value type="QString" key="Qbs.RunConfiguration.CommandLineArguments"></value>
-    <value type="QString" key="Qbs.RunConfiguration.WorkingDirectory">/home/matthew/ofprojects/vectorFlowFromImage/bin/data</value>
+    <value type="QString" key="Qbs.RunConfiguration.WorkingDirectory"></value>
     <value type="QString" key="Qbs.RunConfiguration.WorkingDirectory.default">/home/matthew/ofprojects/vectorFlowFromImage/bin</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
