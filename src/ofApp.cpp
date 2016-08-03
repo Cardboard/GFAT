@@ -106,7 +106,6 @@ void ofApp::setup(){
 
     active_tracks.resize(tracks.size()+1, 0);
 
-    setupGui();
     setup3dTopo();
 
     // temporary(?) viewport stuff
@@ -121,14 +120,6 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    // update the guis
-    gui->update();
-    gOptions->update();
-    // keep the guis in their respective viewports
-    ofVec2f restricted_options_pos = restrictPosition(gOptions->getPosition(),\
-                                                      gOptions->getWidth(), gOptions->getHeight(), vMap);
-    gOptions->setPosition(restricted_options_pos.x, restricted_options_pos.y);
-
     // update calculated components
 
     // update current time
@@ -441,7 +432,7 @@ void ofApp::setupButtons(){
     setupButton(&btn_flow_worms, "worms", &btn_flow.rect, RIGHT, false, 6, 0);
     setupButton(&btn_flow_lines, "lines", &btn_flow_worms.rect, RIGHT, false, 6, 0);
     setupButton(&btn_flow_dots, "dots", &btn_flow_lines.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_flow_disp, "disp", &btn_flow_disp.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_flow_disp, "disp", &btn_flow_dots.rect, RIGHT, false, 6, 0);
 
     // options buttons
     setupButton(&btn_options, "options:", &btn_flow.rect, BOTTOM, false, 0, 3);
@@ -450,7 +441,7 @@ void ofApp::setupButtons(){
     setupButton(&btn_options_eul, "eulerian", &btn_options.rect, RIGHT, false, 6, 0);
     setupButton(&btn_options_small, "small", &btn_options_lag.rect, RIGHT, false, 16, 0);
     setupButton(&btn_options_medium, "medium", &btn_options_lag.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_large, "large", &btn_options_lag.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_large, "large", &btn_options_lag.rect, RIGHT, false, 16, 0);
     setupButton(&btn_options_density_low, "sparse", &btn_options_medium.rect, RIGHT, false, 6, 0);
     setupButton(&btn_options_density_med, "dense", &btn_options_medium.rect, RIGHT, false, 6, 0);
     setupButton(&btn_options_density_high, "packed", &btn_options_medium.rect, RIGHT, false, 6, 0);
@@ -562,7 +553,7 @@ void ofApp::setup3dTopo(){
     cam_zoom = 1000.0;
     extrusionAmount = 0.5;
     ofImage heightmap;
-    heightmap.load("heightmap.png");
+    heightmap.load("bedmap2_bed_rutford.png");
     // texture
     map_buffer.allocate(WIDTH, HEIGHT, GL_RGB);
     //ofImage topo3dteximg;
@@ -712,8 +703,6 @@ void ofApp::draw(){
 
     // draw all GUI elements
     if (!hide_all) {
-        //gui->draw();
-        //gOptions->draw();
         // draw buttons
         drawButtons();
     }
@@ -913,78 +902,72 @@ void ofApp::mousePressed(int x, int y, int button){
             toggleFullscreen(&vModel);
             setupPlots();
             reset_selection = false;
+        // MODE BUTTONS
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_mode_drawing)) {
+            mouse_mode = 0;
+            reset_selection = false;
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_mode_selection)) {
+            mouse_mode = 1;
+            reset_selection = false;
         // LAYER BUTTONS
-        } /* else if (isButtonClicked(ofVec2f(x, y), &btn_layers_gdop)) {
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_gdop)) {
             show_gdop = show_gdop == 0 ? 2 : 0;
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_heightmap)) {
-            show_topo = show_topo == 0 ? 1 : 0;
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_obscov)) {
+            show_gdop = show_gdop == 1 ? 2 : 1;
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_contour)) {
-            show_contour = !show_contour;
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_bed)) {
+            show_topo = show_topo == 1 ? 3 : 1;
+            reset_selection = false;
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_thickness)) {
+            show_topo = show_topo == 2 ? 3 : 2;
+            reset_selection = false;
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_none)) {
+            show_topo = 3;
+            reset_selection = false;
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_surface)) {
+            show_topo = show_topo == 0 ? 3 : 0;
             reset_selection = false;
         // WORM PRESET BUTTONS
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_up)){
+        } else if (WM.include_up == 0 && isButtonClicked(ofVec2f(x, y), &btn_options_EN)){
             WM.include_up = WM.include_up == 1 ? 0 : 1;
             WM.refreshWorms(true);
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_lag)) {
-            if (WM.mode == 1) {
-                WM.setMode(0);
-                if (WM.preset == "disp") WM.preset = "worms";
-                WM.wormPreset(WM.preset);
-                WM.refreshWorms(true);
-            }
+        } else if (WM.include_up == 1 && isButtonClicked(ofVec2f(x, y), &btn_options_ENU)){
+            WM.include_up = WM.include_up == 0 ? 1 : 0;
+            WM.refreshWorms(true);
+        } else if (WM.mode == 1 && isButtonClicked(ofVec2f(x, y), &btn_options_eul)) {
+            WM.setMode(0);
+            if (WM.preset == "disp" && WM.mode == 0) WM.preset = "worms";
+            WM.wormPreset(WM.preset);
+            WM.refreshWorms(true);
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_eul)) {
-            if (WM.mode == 0) {
-                WM.setMode(1);
-                WM.wormPreset(WM.preset);
-                WM.refreshWorms(true);
-            }
+        } else if (WM.mode == 0 && isButtonClicked(ofVec2f(x, y), &btn_options_lag)) {
+            WM.setMode(1);
+            WM.wormPreset(WM.preset);
+            WM.refreshWorms(true);
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_lag_worms)) {
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_flow_worms)) {
             if (WM.preset != "worms") {
                 WM.preset = "worms";
                 WM.wormPreset(WM.preset);
                 WM.refreshWorms(true);
             }
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_lag_lines)) {
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_flow_lines)) {
             if (WM.preset != "lines") {
                 WM.preset = "lines";
                 WM.wormPreset(WM.preset);
                 WM.refreshWorms(true);
             }
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_lag_dots)) {
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_flow_dots)) {
             if (WM.preset != "dots") {
                 WM.preset = "dots";
                 WM.wormPreset(WM.preset);
                 WM.refreshWorms(true);
             }
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_eul_worms)) {
-            if (WM.preset != "worms") {
-                WM.preset = "worms";
-                WM.wormPreset(WM.preset);
-                WM.refreshWorms(true);
-            }
-            reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_eul_lines)) {
-            if (WM.preset != "lines") {
-                WM.preset = "lines";
-                WM.wormPreset(WM.preset);
-                WM.refreshWorms(true);
-            }
-            reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_eul_dots)) {
-            if (WM.preset != "dots") {
-                WM.preset = "dots";
-                WM.wormPreset(WM.preset);
-                WM.refreshWorms(true);
-            }
-            reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_worms_eul_disp)) {
+        } else if (isButtonClicked(ofVec2f(x, y), &btn_flow_disp)) {
             if (WM.preset != "disp") {
                 WM.preset = "disp";
                 WM.wormPreset(WM.preset);
@@ -1008,45 +991,38 @@ void ofApp::mousePressed(int x, int y, int button){
             CM.p3_enabled = CM.p3_enabled == 1 ? 0 : 1;
             plotENU.refreshData(0.1f, 0.f, 1000.f, 0, 0);
             reset_selection = false;
-        // WORM OPTIONS BUTTONS
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_worm)) {
-            mouse_mode = 0;
-            reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_selection)) {
-            mouse_mode = 1;
-            reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_size_small)) {
-            WM.setWormSize(2);
-            WM.wormPreset(WM.preset);
-            WM.refreshWorms(true);
-            reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_size_med)) {
+        // FLOW OPTIONS BUTTONS
+        } else if (WM.worm_size == 2 && isButtonClicked(ofVec2f(x, y), &btn_options_small)) {
             WM.setWormSize(5);
             WM.wormPreset(WM.preset);
             WM.refreshWorms(true);
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_size_large)) {
+        } else if (WM.worm_size == 5 && isButtonClicked(ofVec2f(x, y), &btn_options_medium)) {
             WM.setWormSize(10);
             WM.wormPreset(WM.preset);
             WM.refreshWorms(true);
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_density_low)) {
-            WM.density_preset = 0;
+        } else if (WM.worm_size == 10 && isButtonClicked(ofVec2f(x, y), &btn_options_large)) {
+            WM.setWormSize(2);
             WM.wormPreset(WM.preset);
             WM.refreshWorms(true);
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_density_med)) {
+        } else if (WM.density_preset == 0 && isButtonClicked(ofVec2f(x, y), &btn_options_density_low)) {
             WM.density_preset = 1;
             WM.wormPreset(WM.preset);
             WM.refreshWorms(true);
             reset_selection = false;
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_settings_density_high)) {
+        } else if (WM.density_preset == 1 && isButtonClicked(ofVec2f(x, y), &btn_options_density_med)) {
             WM.density_preset = 2;
             WM.wormPreset(WM.preset);
             WM.refreshWorms(true);
             reset_selection = false;
+        } else if (WM.density_preset == 2 && isButtonClicked(ofVec2f(x, y), &btn_options_density_high)) {
+            WM.density_preset = 0;
+            WM.wormPreset(WM.preset);
+            WM.refreshWorms(true);
+            reset_selection = false;
         }
-        */
 
         // by checking if reset_selection == true here before allowing a selection or worm creation
         // we prevent selections/creations from occuring if a button has been pressed, which is

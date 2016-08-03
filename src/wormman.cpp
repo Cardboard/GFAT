@@ -486,7 +486,7 @@ void WormMan::updateWorms(int t)
     float dt = ofGetLastFrameTime();
 
     if (mode == 0 && (clock > worm_spawnrate || clock == -1)) {
-        for (int i=0; i<5; i++) {
+        for (int i=0; i<10; i++) {
             createWorm();
         }
         clock = 0;
