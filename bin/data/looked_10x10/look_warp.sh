@@ -10,7 +10,8 @@ cols=`grep 'samples =' $hdr | awk '{print $NF}'`
 null=`grep 'output null value' $hdr | awk '{print $NF}'`
 echo Data Ignore Value = $null >> $hdr
 
-for m in `ls $datafld/fourDvel.*.flt.msk | grep -v 'fourDvel.*.flt.flt.msk'`; do 
+#for m in `ls $datafld/fourDvel.*.flt.msk | grep -v 'fourDvel.*.flt.flt.msk'`; do 
+for m in $datafld/errors/fourDvel.*dop.flt; do
     echo $m
     f=`basename $m`.look
     echo $f
@@ -19,6 +20,8 @@ for m in `ls $datafld/fourDvel.*.flt.msk | grep -v 'fourDvel.*.flt.flt.msk'`; do
     ./fixhdr4looks.py $f\.hdr $look
 
     echo $f
+    rm -f $f\.utm
+
     gdalwarp $f $f\.utm -t_srs $tsrs -of ENVI
     sarmath.py $f\.utm $null -null2nan = $f\.utm
 done

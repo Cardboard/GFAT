@@ -16,8 +16,13 @@ using namespace std;
 
 typedef struct Button {
     ofRectangle rect;
+    string text;
     ofImage img;
+    bool is_label = false;
+    bool is_image = false;
     bool hidden = false;
+    float pad_x;
+    float pad_y;
 } Button;
 
 class ofApp : public ofBaseApp{
@@ -31,7 +36,7 @@ public:
 
     void setupGui();
     void setupPlots();
-    void setupButton(Button *btn, string filename, ofRectangle *ref, direction dir, bool is_viewport, int padding);
+    void setupButton(Button *btn, string text, ofRectangle *ref, direction dir, bool is_viewport, int padding_x, int padding_y);
     void setupButtons();
     void setup3dTopo();
     void setCameraPosition();
@@ -64,6 +69,7 @@ public:
     ofVec2f restrictPosition(ofVec2f pos, float obj_w, float obj_h, ofRectangle view);
     void toggleFullscreen(ofRectangle *view);
 
+    ofTrueTypeFont font;
 
     ofRectangle vMap;
     ofRectangle v3d;
@@ -91,8 +97,11 @@ public:
     ofVec2f selection_pos;
     ofVec2f selection2_pos;
 
-    ofImage img_topo;
+    ofImage img_topo_bed;
+    ofImage img_topo_surface;
+    ofImage img_topo_thickness;
     ofImage img_gdop;
+    ofImage img_obscov;
     ofVec2f pos_topo;
     float w_topo;
     float h_topo;
@@ -116,34 +125,37 @@ public:
     Button btn_model_p2;
     Button btn_model_p3;
 
-    Button btn_settings;
-    Button btn_settings_worm;
-    Button btn_settings_selection;
-    Button btn_settings_size_small;
-    Button btn_settings_size_med;
-    Button btn_settings_size_large;
-    Button btn_settings_density_low;
-    Button btn_settings_density_med;
-    Button btn_settings_density_high;
+    Button btn_mode;
+    Button btn_mode_drawing;
+    Button btn_mode_selection;
 
-    Button btn_worms_lag;
-    Button btn_worms_eul;
-    Button btn_worms_lag_worms;
-    Button btn_worms_lag_lines;
-    Button btn_worms_lag_dots;
-    Button btn_worms_eul_worms;
-    Button btn_worms_eul_lines;
-    Button btn_worms_eul_dots;
-    Button btn_worms_eul_disp;
-    Button btn_worms_up;
+    Button btn_options;
+    Button btn_options_lag;
+    Button btn_options_eul;
+    Button btn_options_small;
+    Button btn_options_medium;
+    Button btn_options_large;
+    Button btn_options_density_low;
+    Button btn_options_density_med;
+    Button btn_options_density_high;
+    Button btn_options_EN;
+    Button btn_options_ENU;
+
+    Button btn_flow;
+    Button btn_flow_worms;
+    Button btn_flow_lines;
+    Button btn_flow_dots;
+    Button btn_flow_disp;
 
     Button btn_layers;
+    Button btn_layers_none;
+    Button btn_layers_surface;
+    Button btn_layers_bed;
+    Button btn_layers_thickness;
     Button btn_layers_gdop;
-    Button btn_layers_heightmap;
-    Button btn_layers_contour;
+    Button btn_layers_obscov;
 
     ofImage img_temp_history;
-    ofImage img_temp_modelspace;
     ofImage img_temp_pairspace;
 
     CompMan CM;
@@ -153,6 +165,7 @@ public:
     // TODO delete when time manager takes over
     float* time;
     float newtime;
+    float timescale;
     bool paused;
     string COMPONENT;
 
@@ -180,8 +193,8 @@ public:
     bool show_worms;
     bool show_modeldisp;
     bool show_modelhdisp;
-    bool show_gdop;
-    bool show_heightmap;
+    int  show_gdop;
+    int  show_topo;
     bool show_contour;
 
     // PLOTS N THINGS

@@ -6,8 +6,8 @@ void ofApp::setup(){
     ofEnableAlphaBlending();
 
     // setup byte array
-    SAMPLES = 1007;
-    LINES = 1741;
+    SAMPLES = 1027;
+    LINES = 1820;
     SCALE = 1;
     WIDTH = SAMPLES / SCALE;
     HEIGHT = LINES / SCALE;
@@ -19,17 +19,20 @@ void ofApp::setup(){
     hide_all = false;
     show_tracks = false;
     is_selection = false;
-    show_gdop = false;
-    show_heightmap = true;
+    show_gdop = 2; // 0: gdop, 1: obscov, *: none
+    show_topo = 0; // 0: surface, 1: bed, 2: thickness, *: none
     show_contour = false;
     selection_pos.set(-1,-1);
     selection2_pos.set(-1,-1);
+
+    font.load("arial.ttf", 8);
 
     // TODO replace with a Time Manager class thing
     time = new float;
     *time = 0.0; // starting time
     newtime = *time;
     paused = false;
+    timescale = 1.f;
 
     // setup component manager & components
     CM.setup(SAMPLES, LINES, WIDTH, HEIGHT, 0, 0);
@@ -69,10 +72,14 @@ void ofApp::setup(){
     WM.wormPreset("worms");
 
     // handle topography
-    img_topo.load("rutford_stretched.png");
-    img_topo.resize(WIDTH, HEIGHT);
-    img_gdop.load("gdop_test.png");
-    img_gdop.resize(WIDTH, HEIGHT);
+    img_topo_bed.load("bedmap2_bed_rutford.png");
+    img_topo_surface.load("bedmap2_surface_rutford.png");
+    img_topo_thickness.load("bedmap2_thickness_rutford.png");
+    //img_topo.resize(WIDTH, HEIGHT);
+    img_gdop.load("gdop.png");
+    img_obscov.load("obscov.dop.png");
+
+    //img_gdop.resize(WIDTH, HEIGHT);
 
     Date testdate1(2013, 8, 28);
     Date testdate2(2013, 8, 24);
@@ -106,7 +113,6 @@ void ofApp::setup(){
     setViewportSizes();
 
     img_temp_history.load("selection_history-01.png");
-    img_temp_modelspace.load("model_space-01.png");
     img_temp_pairspace.load("data_space-01.png");
 
     // setup plots
@@ -131,7 +137,7 @@ void ofApp::update(){
 
     // update the worms components
     if (!paused) {
-        *time += 1.f;
+        *time += timescale;
         if (*time > 24 * 45) *time = 0.0;
     }
 
@@ -262,8 +268,8 @@ void ofApp::setupGui(){
     gMapLayers->addToggle("   Horizontal Model Disp", false);
     gMapLayers->addToggle("   Model Disp", false);
     gMapLayers->addToggle("   GDOP", false);
-    show_heightmap = true;
-    gMapLayers->addToggle("   Heightmap", show_heightmap);
+    show_topo = 0; // 0: surface, 1: bed, 2: thickness
+    gMapLayers->addToggle("   Heightmap", show_topo);
     gui->addBreak()->setHeight(10.0f);
 
     // worms -- gui elements
@@ -319,52 +325,6 @@ void ofApp::setupGui(){
     ofxDatGuiToggle* wormopaque = gOptions->addToggle("   Opaque", false);
     wormopaque->setChecked(WM.worm_opaque);
 
-    // tracks -- events
-    gMapTracks->onButtonEvent([&](ofxDatGuiButtonEvent e) {
-    });
-    // layers -- events
-    gMapLayers->onToggleEvent([&](ofxDatGuiToggleEvent e) {
-        if (e.target->is("   Tracks")) {
-            show_tracks = e.checked;
-        } else if (e.target->is("   LOS Displacement")) {
-            show_losdisp = e.checked;
-        } else if (e.target->is("   Azimuth Displacement")) {
-            show_azidisp = e.checked;
-        } else if (e.target->is("   Worms")) {
-            show_worms = e.checked;
-        } else if (e.target->is("   Horizontal Model Disp")) {
-            show_modelhdisp = e.checked;
-        } else if (e.target->is("   Model Disp")) {
-            show_modeldisp = e.checked;
-        } else if (e.target->is("   GDOP")) {
-            show_gdop = e.checked;
-            if (e.checked) {
-                WM.setColorMode(1);
-            } else {
-                WM.setColorMode(0);
-            }
-        } else if (e.target->is("   Heightmap")) {
-            show_heightmap = e.checked;
-        }
-    });
-    // model -- events
-    gMapModel->onToggleEvent([&](ofxDatGuiToggleEvent e) {
-        if (e.target->is("   V(t)")) {
-            CM.vel_enabled = e.checked == true ? 1 : 0;
-            // if we're in eulerian mode we need to refresh the worms
-            // so that the worms' starting ENU values get reset
-            if (WM.mode == 1) {
-                WM.refreshWorms(true);
-            }
-        } else if (e.target->is("   Period 1")) {
-            CM.p1_enabled = e.checked == true ? 1 : 0;
-        } else if (e.target->is("   Period 2")) {
-            CM.p2_enabled = e.checked == true ? 1 : 0;
-        } else if (e.target->is("   Period 3")) {
-            CM.p3_enabled = e.checked == true ? 1 : 0;
-        }
-    });
-    gOptions->getToggle("   Arrows")->setVisible(false);
 
     // worms -- events
     euler_toggle->onToggleEvent([&](ofxDatGuiToggleEvent e) {
@@ -439,92 +399,115 @@ void ofApp::setupPlots(){
 //--------------------------------------------------------------
 void ofApp::setupButtons(){
     // fullscreen toggle buttons
-    setupButton(&btn_fullscreen_map, "icons/fullscreen_button.png", &vMap, BOTTOM_RIGHT, true, 3);
-    setupButton(&btn_fullscreen_model, "icons/fullscreen_button.png", &vModel, BOTTOM_RIGHT, true, 3);
+    btn_fullscreen_map.is_image = true;
+    btn_fullscreen_model.is_image = true;
 
-    // model buttons
-    setupButton(&btn_model_p3, "icons/model_p3.png", &vMap, TOP_RIGHT, true, 3);
-    setupButton(&btn_model_p2, "icons/model_p2.png", &btn_model_p3.rect, LEFT, false, 2);
-    setupButton(&btn_model_p1, "icons/model_p1.png", &btn_model_p2.rect, LEFT, false, 2);
-    setupButton(&btn_model_vel, "icons/model_vel.png", &btn_model_p1.rect, LEFT, false, 2);
-    setupButton(&btn_model, "icons/model.png", &btn_model_vel.rect, LEFT, false, 3);
+    setupButton(&btn_fullscreen_map, "icons/fullscreen_button.png", &vMap, BOTTOM_RIGHT, true, -3, -3);
+    setupButton(&btn_fullscreen_model, "icons/fullscreen_button.png", &vModel, BOTTOM_RIGHT, true, -3, -3);
 
     // 2d/3d toggle buttons
-    setupButton(&btn_3d, "icons/3dview_button.png", &btn_fullscreen_map.rect, LEFT, false, 5);
-    setupButton(&btn_2d, "icons/2dview_button.png", &btn_3d.rect, LEFT, false, 0);
+    btn_3d.is_image = true;
+    btn_2d.is_image = true;
+    setupButton(&btn_3d, "icons/3dview_button.png", &btn_fullscreen_map.rect, LEFT, false, -3, 0);
+    setupButton(&btn_2d, "icons/2dview_button.png", &btn_3d.rect, LEFT, false, 0, 0);
+
+    // model buttons
+    setupButton(&btn_model, "model:", &vMap, TOP_LEFT, true, 3, 3);
+    btn_model.is_label = true;
+    setupButton(&btn_model_vel, "v(t)", &btn_model.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_model_p1, "period 1", &btn_model_vel.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_model_p2, "period 2", &btn_model_p1.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_model_p3, "period 3", &btn_model_p2.rect, RIGHT, false, 6, 0);
 
     // layer buttons
-    setupButton(&btn_layers_contour, "icons/layers_contour.png", &btn_model_p3.rect, BOTTOM, false, 5);
-    setupButton(&btn_layers_gdop, "icons/layers_gdop.png", &btn_layers_contour.rect, LEFT, false, 3);
-    setupButton(&btn_layers_heightmap, "icons/layers_heightmap.png", &btn_layers_gdop.rect, LEFT, false, 3);
-    setupButton(&btn_layers, "icons/layers.png", &btn_layers_heightmap.rect, LEFT, false, 3);
+    setupButton(&btn_layers, "layers:", &btn_model.rect, BOTTOM, false, 0, 3);
+    btn_layers.is_label = true;
+    setupButton(&btn_layers_none, "none", &btn_layers.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_layers_surface, "surface", &btn_layers_none.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_layers_bed, "bed", &btn_layers_surface.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_layers_thickness, "thickness", &btn_layers_bed.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_layers_gdop, "gdop", &btn_layers_thickness.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_layers_obscov, "obscov", &btn_layers_gdop.rect, RIGHT, false, 6, 0);
 
-    // settings buttons
-    setupButton(&btn_settings_density_high, "icons/settings_dhigh.png", &btn_layers_contour.rect, BOTTOM, false, 5);
-    setupButton(&btn_settings_density_med, "icons/settings_dmed.png", &btn_settings_density_high.rect, LEFT, false, 0);
-    setupButton(&btn_settings_density_low, "icons/settings_dlow.png", &btn_settings_density_med.rect, LEFT, false, 0);
-    setupButton(&btn_settings_size_large, "icons/settings_large.png", &btn_settings_density_low.rect, LEFT, false, 3);
-    setupButton(&btn_settings_size_med, "icons/settings_med.png", &btn_settings_size_large.rect, LEFT, false, 0);
-    setupButton(&btn_settings_size_small, "icons/settings_small.png", &btn_settings_size_med.rect, LEFT, false, 0);
-    setupButton(&btn_settings_selection, "icons/settings_selection.png", &btn_settings_size_small.rect, LEFT, false, 3);
-    setupButton(&btn_settings_worm, "icons/settings_worm.png", &btn_settings_selection.rect, LEFT, false, 0);
-    setupButton(&btn_settings, "icons/settings.png", &btn_settings_worm.rect, LEFT, false, 3);
+    // mode buttons
+    setupButton(&btn_mode, "mode:", &btn_layers.rect, BOTTOM, false, 0, 3);
+    btn_mode.is_label = true;
+    setupButton(&btn_mode_drawing, "draw", &btn_mode.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_mode_selection, "select", &btn_mode_drawing.rect, RIGHT, false, 6, 0);
 
-    // worm preset buttons
-    setupButton(&btn_worms_eul_disp, "icons/worms_disp.png", &btn_settings_density_high.rect, BOTTOM, false, 5);
-    setupButton(&btn_worms_eul_dots, "icons/worms_dots.png", &btn_worms_eul_disp.rect, LEFT, false, 0);
-    setupButton(&btn_worms_lag_dots, "icons/worms_dots.png", &btn_worms_eul_disp.rect, LEFT, false, 0);
-    setupButton(&btn_worms_eul_lines, "icons/worms_lines.png", &btn_worms_eul_dots.rect, LEFT, false, 0);
-    setupButton(&btn_worms_lag_lines, "icons/worms_lines.png", &btn_worms_eul_dots.rect, LEFT, false, 0);
-    setupButton(&btn_worms_eul_worms, "icons/worms_worms.png", &btn_worms_eul_lines.rect, LEFT, false, 0);
-    setupButton(&btn_worms_lag_worms, "icons/worms_worms.png", &btn_worms_eul_lines.rect, LEFT, false, 0);
-    setupButton(&btn_worms_up, "icons/worms_up.png", &btn_worms_eul_worms.rect, LEFT, false, 3);
-    setupButton(&btn_worms_eul, "icons/worms_eul.png", &btn_worms_up.rect, LEFT, false, 3);
-    setupButton(&btn_worms_lag, "icons/worms_lag.png", &btn_worms_eul.rect, LEFT, false, 0);
+    // flow buttons
+    setupButton(&btn_flow, "flow:", &btn_mode.rect, BOTTOM, false, 0, 3);
+    btn_flow.is_label = true;
+    setupButton(&btn_flow_worms, "worms", &btn_flow.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_flow_lines, "lines", &btn_flow_worms.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_flow_dots, "dots", &btn_flow_lines.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_flow_disp, "disp", &btn_flow_disp.rect, RIGHT, false, 6, 0);
+
+    // options buttons
+    setupButton(&btn_options, "options:", &btn_flow.rect, BOTTOM, false, 0, 3);
+    btn_options.is_label = true;
+    setupButton(&btn_options_lag, "lagrangian", &btn_options.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_eul, "eulerian", &btn_options.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_small, "small", &btn_options_lag.rect, RIGHT, false, 16, 0);
+    setupButton(&btn_options_medium, "medium", &btn_options_lag.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_large, "large", &btn_options_lag.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_density_low, "sparse", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_density_med, "dense", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_density_high, "packed", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_EN, "en", &btn_options_density_high.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_ENU, "enu", &btn_options_density_high.rect, RIGHT, false, 6, 0);
 }
 
 //--------------------------------------------------------------
-void ofApp::setupButton(Button *btn, string filename, ofRectangle *ref, direction dir, bool is_viewport, int padding){
-    // set the button's width and height based on the image's width and height
-    if (!btn->img.isAllocated())
-        btn->img.load(filename);
-    btn->rect.width = btn->img.getWidth();
-    btn->rect.height = btn->img.getHeight();
+void ofApp::setupButton(Button *btn, string text, ofRectangle *ref, direction dir, bool is_viewport, int padding_x, int padding_y){
+
+    // set the button's width and height based on the image's width and height if it is an image-based button
+    if (btn->is_image) {
+        if (!btn->img.isAllocated())
+            btn->img.load(text);
+        btn->rect.width = btn->img.getWidth();
+        btn->rect.height = btn->img.getHeight();
+    // otherwise, set the width and height based on the text's width & height
+    } else {
+        btn->text = text;
+        btn->rect.width = font.stringWidth(text);
+        btn->rect.height = font.stringHeight("!");
+    }
     // place the button according to the given direction, relative to a viewport
     if (is_viewport) {
         switch(dir) {
             // anchor the button to one of the view's sides or corners
             case LEFT:
-                btn->rect.x = ref->x + padding;
-                btn->rect.y = ref->y + ref->height;
+                btn->rect.x = ref->x + padding_x;
+                btn->rect.y = ref->y + ref->height + padding_y;
                 break;
             case TOP_LEFT:
-                btn->rect.x = ref->x;
-                btn->rect.y = ref->y;
+                btn->rect.x = ref->x + padding_x;
+                btn->rect.y = ref->y + padding_y;
                 break;
             case TOP:
-                btn->rect.x = ref->x + ref->width/2 - btn->rect.width/2;
-                btn->rect.y = ref->y + padding;
+                btn->rect.x = ref->x + ref->width/2 - btn->rect.width/2 + padding_x;
+                btn->rect.y = ref->y + padding_y;
                 break;
             case TOP_RIGHT:
-                btn->rect.x = ref->x + ref->width - btn->rect.width - padding;
-                btn->rect.y = ref->y + padding;
+                btn->rect.x = ref->x + ref->width - btn->rect.width + padding_x;
+                btn->rect.y = ref->y + padding_y;
                 break;
             case RIGHT:
-                btn->rect.x = ref->x + ref->width - btn->rect.width - padding;
-                btn->rect.y = ref->y + ref->height/2 - btn->rect.height/2;
+                btn->rect.x = ref->x + ref->width - btn->rect.width + padding_x;
+                btn->rect.y = ref->y + ref->height/2 + btn->rect.height/2 + padding_y;
                 break;
             case BOTTOM_RIGHT:
-                btn->rect.x = ref->x + ref->width - btn->rect.width - padding;
-                btn->rect.y = ref->y + ref->height - btn->rect.height - padding;
+                btn->rect.x = ref->x + ref->width - btn->rect.width + padding_x;
+                btn->rect.y = ref->y + ref->height - btn->rect.height + padding_y;
                 break;
             case BOTTOM:
-                btn->rect.x = ref->x + ref->width/2 - btn->rect.width/2;
-                btn->rect.y = ref->y + ref->height - btn->rect.height - padding;
+                btn->rect.x = ref->x + ref->width/2 - btn->rect.width/2 + padding_x;
+                btn->rect.y = ref->y + ref->height - btn->rect.height + padding_y;
                 break;
             case BOTTOM_LEFT:
-                btn->rect.x = ref->x + padding;
-                btn->rect.y = ref->y + ref->height - btn->rect.height - padding;
+                btn->rect.x = ref->x + padding_x;
+                btn->rect.y = ref->y + ref->height - btn->rect.height + padding_y;
                 break;
         }
     // place the button according to the given direction, relative to another button (or rectangle)
@@ -533,36 +516,36 @@ void ofApp::setupButton(Button *btn, string filename, ofRectangle *ref, directio
             // unlike with the viewport, we place the button in the specified direction of the reference rectangle,
             // rather than in a viewport's corner
             case LEFT:
-                btn->rect.x = ref->x - btn->rect.width - padding;
-                btn->rect.y = ref->y;
+                btn->rect.x = ref->x - btn->rect.width + padding_x;
+                btn->rect.y = ref->y + padding_y;
                 break;
             case TOP_LEFT:
-                btn->rect.x = ref->x - btn->rect.width - padding;
-                btn->rect.y = ref->y - btn->rect.height - padding;
+                btn->rect.x = ref->x - btn->rect.width + padding_x;
+                btn->rect.y = ref->y - btn->rect.height + padding_y;
                 break;
             case TOP:
-                btn->rect.x = ref->x;
-                btn->rect.y = ref->y - btn->rect.height - padding;
+                btn->rect.x = ref->x + padding_x;
+                btn->rect.y = ref->y - btn->rect.height + padding_y;
                 break;
             case TOP_RIGHT:
-                btn->rect.x = ref->x + ref->width + padding;
-                btn->rect.y = ref->y - btn->rect.height - padding;
+                btn->rect.x = ref->x + ref->width + padding_x;
+                btn->rect.y = ref->y - btn->rect.height + padding_y;
                 break;
             case RIGHT:
-                btn->rect.x = ref->x + btn->rect.width + padding;
-                btn->rect.y = ref->y;
+                btn->rect.x = ref->x + ref->width + padding_x;
+                btn->rect.y = ref->y + padding_y;
                 break;
             case BOTTOM_RIGHT:
-                btn->rect.x = ref->x + btn->rect.width + padding;
-                btn->rect.y = ref->y + btn->rect.height + padding;
+                btn->rect.x = ref->x + btn->rect.width + padding_x;
+                btn->rect.y = ref->y + btn->rect.height + padding_y;
                 break;
             case BOTTOM:
-                btn->rect.x = ref->x;
-                btn->rect.y = ref->y + ref->height + padding;
+                btn->rect.x = ref->x + padding_x;
+                btn->rect.y = ref->y + ref->height + padding_y;
                 break;
             case BOTTOM_LEFT:
-                btn->rect.x = ref->x - btn->rect.width - padding;
-                btn->rect.y = ref->y + ref->height + padding;
+                btn->rect.x = ref->x - btn->rect.width + padding_x;
+                btn->rect.y = ref->y + ref->height + padding_y;
                 break;
         }
     }
@@ -577,24 +560,24 @@ void ofApp::setup3dTopo(){
     position_3d = ofVec2f(946/2.f, 1558.f/2.f); // starting point is the center of the mesh
     rotation_3d = 0.f;
     cam_zoom = 1000.0;
-    extrusionAmount = 0.7;
+    extrusionAmount = 0.5;
     ofImage heightmap;
-    heightmap.load("rutford_stretched.png");
+    heightmap.load("heightmap.png");
     // texture
     map_buffer.allocate(WIDTH, HEIGHT, GL_RGB);
-    ofImage topo3dteximg;
-    topo3dteximg.load("rutford_stretched_tex.png");
-    topo3dtex = topo3dteximg.getTexture();
+    //ofImage topo3dteximg;
+    //topo3dteximg.load("rutford_stretched_tex.png");
+    //topo3dtex = topo3dteximg.getTexture();
     //topo3dtex.setTextureWrap(GL_REPEAT, GL_REPEAT);
     float h = heightmap.getHeight();
     float w = heightmap.getWidth();
-    float px_height, px_color;
+    float px_height;//, px_color;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             px_height = max(0.0f, heightmap.getColor(x, y).getBrightness());
-            //px_color = 255.f - min(255.f, 8 * px_height);
+            //px_color = 255.f - min(255.f, px_height);
             topo3d.addVertex(ofPoint(x, y, px_height * extrusionAmount));
-            //topo3d.addColor(ofColor(150, px_color, 150));
+            //topo3d.addColor(ofColor(px_color));
             topo3d.addTexCoord(ofVec2f(x, y));
         }
     }
@@ -640,19 +623,29 @@ void ofApp::draw(){
     // the gui and buttons are thus drawn after the buffer drawing
     map_buffer.begin();
 
-    if (show_heightmap) {
-        img_topo.draw(0, 0);
+    if (show_topo == 0) {
+        img_topo_surface.draw(0, 0);
+    } else if (show_topo == 1) {
+        img_topo_bed.draw(0, 0);
+    } else if (show_topo == 2) {
+        img_topo_thickness.draw(0, 0);
     } else {
         ofSetColor(225);
         ofDrawRectangle(vMap.x, vMap.y, WIDTH, HEIGHT);
         ofSetColor(255, 255, 255);
     }
 
-    if (show_gdop)
-        // TODO delete magic no.
+    if (show_gdop == 0) {
+        ofSetColor(255, 255, 255, 150);
         img_gdop.draw(0, 0);
+        ofSetColor(255);
+    } else if (show_gdop == 1) {
+        ofSetColor(255, 255, 255, 150);
+        img_obscov.draw(0, 0);
+        ofSetColor(255);
+    }
 
-    CM.current.comp.overlay.draw(0, 0); // mask which slightly blocks where we don't have data
+    //CM.current.comp.overlay.draw(0, 0); // mask which slightly blocks where we don't have data
 
     if (show_worms)
         WM.drawWorms();
@@ -736,15 +729,21 @@ void ofApp::drawPlots(){
 void ofApp::drawButton(Button *btn, bool colored, bool visible){
     if (visible) {
         btn->hidden = false;
+
+        // set color
         if (colored) {
             ofSetColor(ofColor::cyan);
-            btn->img.draw(btn->rect.position);
-            ofSetColor(255);
+        } else if (btn->is_label){
+            ofSetColor(ofColor::magenta);
         } else {
-            //ofSetColor(255,255,255,100);
-            btn->img.draw(btn->rect.position);
-            //ofSetColor(255);
+            ofSetColor(ofColor(255, 255, 255, 150));
         }
+
+        // draw the image/text
+        if (btn->is_image)
+            btn->img.draw(btn->rect.position);
+        else
+            font.drawString(btn->text, btn->rect.position.x, btn->rect.position.y + font.stringHeight("!"));
     } else {
         btn->hidden = true;
     }
@@ -764,31 +763,36 @@ void ofApp::drawButtons() {
     drawButton(&btn_model_p2, CM.p2_enabled, true);
     drawButton(&btn_model_p3, CM.p3_enabled, true);
 
-    drawButton(&btn_settings, false, true);
-    drawButton(&btn_settings_worm, mouse_mode == 0, true);
-    drawButton(&btn_settings_selection, mouse_mode == 1, true);
-    drawButton(&btn_settings_size_small, WM.worm_size == 2, true);
-    drawButton(&btn_settings_size_med, WM.worm_size == 5, true);
-    drawButton(&btn_settings_size_large, WM.worm_size == 10, true);
-    drawButton(&btn_settings_density_low, WM.density_preset == 0, true);
-    drawButton(&btn_settings_density_med, WM.density_preset == 1, true);
-    drawButton(&btn_settings_density_high, WM.density_preset == 2, true);
-
-    drawButton(&btn_worms_lag, WM.mode == 0, true);
-    drawButton(&btn_worms_eul, WM.mode == 1, true);
-    drawButton(&btn_worms_up, WM.include_up == 1, true);
-    drawButton(&btn_worms_lag_worms, WM.preset == "worms", WM.mode == 0);
-    drawButton(&btn_worms_lag_lines, WM.preset == "lines", WM.mode == 0);
-    drawButton(&btn_worms_lag_dots, WM.preset == "dots", WM.mode == 0);
-    drawButton(&btn_worms_eul_worms, WM.preset == "worms", WM.mode == 1);
-    drawButton(&btn_worms_eul_lines, WM.preset == "lines", WM.mode == 1);
-    drawButton(&btn_worms_eul_dots, WM.preset == "dots", WM.mode == 1);
-    drawButton(&btn_worms_eul_disp, WM.preset == "disp", WM.mode == 1);
 
     drawButton(&btn_layers, false, true);
-    drawButton(&btn_layers_gdop, show_gdop == true, true);
-    drawButton(&btn_layers_heightmap, show_heightmap == true, true);
-    drawButton(&btn_layers_contour, show_contour == true, true);
+    drawButton(&btn_layers_none, show_topo >= 3, true);
+    drawButton(&btn_layers_surface, show_topo == 0, true);
+    drawButton(&btn_layers_bed, show_topo == 1, true);
+    drawButton(&btn_layers_thickness, show_topo == 2, true);
+    drawButton(&btn_layers_gdop, show_gdop == 0, true);
+    drawButton(&btn_layers_obscov, show_gdop == 1, true);
+
+    drawButton(&btn_mode, false, true);
+    drawButton(&btn_mode_drawing, mouse_mode == 0, true);
+    drawButton(&btn_mode_selection, mouse_mode == 1, true);
+
+    drawButton(&btn_flow, false, true);
+    drawButton(&btn_flow_worms, WM.preset == "worms", true);
+    drawButton(&btn_flow_lines, WM.preset == "lines", true);
+    drawButton(&btn_flow_dots, WM.preset == "dots", true);
+    drawButton(&btn_flow_disp, WM.preset == "disp", WM.mode == 1);
+
+    drawButton(&btn_options, false, true);
+    drawButton(&btn_options_lag, false, WM.mode == 0);
+    drawButton(&btn_options_eul, false, WM.mode == 1);
+    drawButton(&btn_options_small, false, WM.worm_size == 2);
+    drawButton(&btn_options_medium, false, WM.worm_size == 5);
+    drawButton(&btn_options_large, false, WM.worm_size == 10);
+    drawButton(&btn_options_density_low, false, WM.density_preset == 0);
+    drawButton(&btn_options_density_med, false, WM.density_preset == 1);
+    drawButton(&btn_options_density_high, false, WM.density_preset == 2);
+    drawButton(&btn_options_EN, false, WM.include_up == 0);
+    drawButton(&btn_options_ENU, false, WM.include_up == 1);
 }
 
 //--------------------------------------------------------------
@@ -910,11 +914,11 @@ void ofApp::mousePressed(int x, int y, int button){
             setupPlots();
             reset_selection = false;
         // LAYER BUTTONS
-        } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_gdop)) {
-            show_gdop = !show_gdop;
+        } /* else if (isButtonClicked(ofVec2f(x, y), &btn_layers_gdop)) {
+            show_gdop = show_gdop == 0 ? 2 : 0;
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_heightmap)) {
-            show_heightmap = !show_heightmap;
+            show_topo = show_topo == 0 ? 1 : 0;
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_layers_contour)) {
             show_contour = !show_contour;
@@ -1042,6 +1046,7 @@ void ofApp::mousePressed(int x, int y, int button){
             WM.refreshWorms(true);
             reset_selection = false;
         }
+        */
 
         // by checking if reset_selection == true here before allowing a selection or worm creation
         // we prevent selections/creations from occuring if a button has been pressed, which is
