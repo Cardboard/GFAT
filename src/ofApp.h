@@ -110,6 +110,7 @@ public:
     bool fullscreen; // true when any view is in fullscreen mode
     bool hide_all; // hides all GUI windows and buttons
     bool is_selection;
+    bool is_selection2;
     int map_mode; // either 2 (for 2D) or 3 (for 3D)
     int mouse_mode; // 0: worm drawing mode, 1: selection mode
 
@@ -150,9 +151,12 @@ public:
     Button btn_layers;
     Button btn_layers_none;
     Button btn_layers_surface;
+    Button btn_layers_divider1;
     Button btn_layers_bed;
+    Button btn_layers_divider2;
     Button btn_layers_thickness;
     Button btn_layers_gdop;
+    Button btn_layers_divider3;
     Button btn_layers_obscov;
 
     ofImage img_temp_history;

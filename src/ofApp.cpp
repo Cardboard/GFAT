@@ -2,8 +2,9 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofSetVerticalSync(true);
+    ofSetVerticalSync(false);
     ofEnableAlphaBlending();
+    ofEnableAntiAliasing();
 
     // setup byte array
     SAMPLES = 1027;
@@ -19,20 +20,21 @@ void ofApp::setup(){
     hide_all = false;
     show_tracks = false;
     is_selection = false;
+    is_selection2 = false;
     show_gdop = 2; // 0: gdop, 1: obscov, *: none
     show_topo = 0; // 0: surface, 1: bed, 2: thickness, *: none
     show_contour = false;
     selection_pos.set(-1,-1);
     selection2_pos.set(-1,-1);
 
-    font.load("arial.ttf", 8);
+    font.load("fonts/AkzidenzGrotesk-LightSC.otf", 8);
 
     // TODO replace with a Time Manager class thing
     time = new float;
     *time = 0.0; // starting time
     newtime = *time;
     paused = false;
-    timescale = 1.f;
+    timescale = 50.f;
 
     // setup component manager & components
     CM.setup(SAMPLES, LINES, WIDTH, HEIGHT, 0, 0);
@@ -109,13 +111,16 @@ void ofApp::setup(){
     setup3dTopo();
 
     // temporary(?) viewport stuff
+    setupGui();
     setViewportSizes();
 
     img_temp_history.load("selection_history-01.png");
     img_temp_pairspace.load("data_space-01.png");
 
     // setup plots
-    plotENU = ENUPlot(&CM, &selection_pos, "EAST", "time", "disp");
+    plotENU = ENUPlot(&CM, &selection_pos, &selection2_pos, time, "ENU", "Time", "Disp");
+
+    ofSetFrameRate(30);
 }
 
 //--------------------------------------------------------------
@@ -128,8 +133,11 @@ void ofApp::update(){
 
     // update the worms components
     if (!paused) {
-        *time += timescale;
-        if (*time > 24 * 45) *time = 0.0;
+        *time = ofGetElapsedTimef() * timescale;
+        if (*time > 500.f) {
+            *time = 0.0;
+            ofResetElapsedTimeCounter();
+        }
     }
 
     if (show_worms)
@@ -244,9 +252,11 @@ void ofApp::setupGui(){
     gui->setAutoDraw(false);
     gui->addFRM(1.0f);
     gTimeGui = new ofxDatGui(ofxDatGuiAnchor::BOTTOM_LEFT);
-    timeslider = gTimeGui->addSlider("Time", 0, 24*45);
+    timeslider = gTimeGui->addSlider("Time", 0, 500.f);
     timeslider->bind(*time);
     timeslider->setWidth(ofGetWindowWidth(), 0.05);
+    timeslider->setStripeVisible(false);
+    gTimeGui->setTheme(new ofxDatGuiThemeCharcoal());
 
     // layers -- gui elements
     gMapLayers = gui->addFolder("Layers", ofColor::aliceBlue);
@@ -393,60 +403,68 @@ void ofApp::setupButtons(){
     btn_fullscreen_map.is_image = true;
     btn_fullscreen_model.is_image = true;
 
-    setupButton(&btn_fullscreen_map, "icons/fullscreen_button.png", &vMap, BOTTOM_RIGHT, true, -3, -3);
-    setupButton(&btn_fullscreen_model, "icons/fullscreen_button.png", &vModel, BOTTOM_RIGHT, true, -3, -3);
+    setupButton(&btn_fullscreen_map, "icons/fullscreen_button.png", &vMap, BOTTOM_RIGHT, true, -5, -5);
+    setupButton(&btn_fullscreen_model, "icons/fullscreen_button.png", &vModel, BOTTOM_RIGHT, true, -5, -5);
 
     // 2d/3d toggle buttons
     btn_3d.is_image = true;
     btn_2d.is_image = true;
-    setupButton(&btn_3d, "icons/3dview_button.png", &btn_fullscreen_map.rect, LEFT, false, -3, 0);
+    setupButton(&btn_3d, "icons/3dview_button.png", &btn_fullscreen_map.rect, LEFT, false, -3, -2);
     setupButton(&btn_2d, "icons/2dview_button.png", &btn_3d.rect, LEFT, false, 0, 0);
 
     // model buttons
-    setupButton(&btn_model, "model:", &vMap, TOP_LEFT, true, 3, 3);
+    setupButton(&btn_model, "icons/model.png", &vMap, TOP_LEFT, true, 20, 20);
     btn_model.is_label = true;
-    setupButton(&btn_model_vel, "v(t)", &btn_model.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_model_p1, "period 1", &btn_model_vel.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_model_p2, "period 2", &btn_model_p1.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_model_p3, "period 3", &btn_model_p2.rect, RIGHT, false, 6, 0);
+    btn_model.is_image = true;
+    setupButton(&btn_model_vel, "v(t)", &btn_model.rect, RIGHT, false, 6, 2);
+    setupButton(&btn_model_p1, "P1", &btn_model_vel.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_model_p2, "P2", &btn_model_p1.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_model_p3, "P3", &btn_model_p2.rect, RIGHT, false, 6, 0);
 
     // layer buttons
-    setupButton(&btn_layers, "layers:", &btn_model.rect, BOTTOM, false, 0, 3);
+    setupButton(&btn_layers, "icons/layers.png", &btn_model.rect, BOTTOM, false, 0, 3);
     btn_layers.is_label = true;
-    setupButton(&btn_layers_none, "none", &btn_layers.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_layers_surface, "surface", &btn_layers_none.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_layers_bed, "bed", &btn_layers_surface.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_layers_thickness, "thickness", &btn_layers_bed.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_layers_gdop, "gdop", &btn_layers_thickness.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_layers_obscov, "obscov", &btn_layers_gdop.rect, RIGHT, false, 6, 0);
+    btn_layers.is_image = true;
+    //setupButton(&btn_layers_none, "None", &btn_layers.rect, RIGHT, false, 6, 2);
+    setupButton(&btn_layers_surface, "Surface", &btn_layers.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_layers_divider1, "/", &btn_layers_surface.rect, RIGHT, false, 1, 0);
+    setupButton(&btn_layers_bed, "Bed", &btn_layers_divider1.rect, RIGHT, false, 1, 0);
+    setupButton(&btn_layers_divider2, "/", &btn_layers_bed.rect, RIGHT, false, 1, 0);
+    setupButton(&btn_layers_thickness, "Thickness", &btn_layers_divider2.rect, RIGHT, false, 1, 0);
+    setupButton(&btn_layers_gdop, "GDOP", &btn_layers_thickness.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_layers_divider3, "/", &btn_layers_gdop.rect, RIGHT, false, 1, 0);
+    setupButton(&btn_layers_obscov, "OBSCOV", &btn_layers_divider3.rect, RIGHT, false, 1, 0);
 
     // mode buttons
-    setupButton(&btn_mode, "mode:", &btn_layers.rect, BOTTOM, false, 0, 3);
+    setupButton(&btn_mode, "icons/mode.png", &btn_layers.rect, BOTTOM, false, 0, 3);
     btn_mode.is_label = true;
-    setupButton(&btn_mode_drawing, "draw", &btn_mode.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_mode_selection, "select", &btn_mode_drawing.rect, RIGHT, false, 6, 0);
+    btn_mode.is_image = true;
+    setupButton(&btn_mode_drawing, "Draw", &btn_mode.rect, RIGHT, false, 6, 2);
+    setupButton(&btn_mode_selection, "Select", &btn_mode_drawing.rect, RIGHT, false, 6, 0);
 
     // flow buttons
-    setupButton(&btn_flow, "flow:", &btn_mode.rect, BOTTOM, false, 0, 3);
+    setupButton(&btn_flow, "icons/worms.png", &btn_mode.rect, BOTTOM, false, 0, 3);
     btn_flow.is_label = true;
-    setupButton(&btn_flow_worms, "worms", &btn_flow.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_flow_lines, "lines", &btn_flow_worms.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_flow_dots, "dots", &btn_flow_lines.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_flow_disp, "disp", &btn_flow_dots.rect, RIGHT, false, 6, 0);
+    btn_flow.is_image = true;
+    setupButton(&btn_flow_worms, "Worms", &btn_flow.rect, RIGHT, false, 6, 2);
+    setupButton(&btn_flow_lines, "Lines", &btn_flow_worms.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_flow_dots, "Dots", &btn_flow_lines.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_flow_disp, "Disp", &btn_flow_dots.rect, RIGHT, false, 6, 0);
 
     // options buttons
-    setupButton(&btn_options, "options:", &btn_flow.rect, BOTTOM, false, 0, 3);
+    setupButton(&btn_options, "icons/settings.png", &btn_flow.rect, BOTTOM, false, 0, 3);
     btn_options.is_label = true;
-    setupButton(&btn_options_lag, "lagrangian", &btn_options.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_eul, "eulerian", &btn_options.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_small, "small", &btn_options_lag.rect, RIGHT, false, 16, 0);
-    setupButton(&btn_options_medium, "medium", &btn_options_lag.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_large, "large", &btn_options_lag.rect, RIGHT, false, 16, 0);
-    setupButton(&btn_options_density_low, "sparse", &btn_options_medium.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_density_med, "dense", &btn_options_medium.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_density_high, "packed", &btn_options_medium.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_EN, "en", &btn_options_density_high.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_ENU, "enu", &btn_options_density_high.rect, RIGHT, false, 6, 0);
+    btn_options.is_image = true;
+    setupButton(&btn_options_lag, "LaGrangian", &btn_options.rect, RIGHT, false, 6, 2);
+    setupButton(&btn_options_eul, "Eulerian", &btn_options.rect, RIGHT, false, 6, 2);
+    setupButton(&btn_options_small, "Small", &btn_options_lag.rect, RIGHT, false, 12, 0);
+    setupButton(&btn_options_medium, "Medium", &btn_options_lag.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_large, "Large", &btn_options_lag.rect, RIGHT, false, 12, 0);
+    setupButton(&btn_options_density_low, "Sparse", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_density_med, "Dense", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_density_high, "Packed", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_EN, "EN", &btn_options_density_high.rect, RIGHT, false, 8, 0);
+    setupButton(&btn_options_ENU, "ENU", &btn_options_density_high.rect, RIGHT, false, 8, 0);
 }
 
 //--------------------------------------------------------------
@@ -551,9 +569,9 @@ void ofApp::setup3dTopo(){
     position_3d = ofVec2f(946/2.f, 1558.f/2.f); // starting point is the center of the mesh
     rotation_3d = 0.f;
     cam_zoom = 1000.0;
-    extrusionAmount = 0.5;
+    extrusionAmount = 0.2;
     ofImage heightmap;
-    heightmap.load("bedmap2_bed_rutford.png");
+    heightmap.load("bedmap2_surface_rutford.png");
     // texture
     map_buffer.allocate(WIDTH, HEIGHT, GL_RGB);
     //ofImage topo3dteximg;
@@ -651,10 +669,23 @@ void ofApp::draw(){
             }
             it->draw();
         }
-        ofSetColor(ofColor::white);
     }
-    if (selection_pos.x != -1 && selection_pos.y != -1)
+    if (selection_pos.x != -1 && selection_pos.y != -1) {
+        ofNoFill();
+        ofSetColor(ofColor::lightCoral);
+        ofDrawCircle(selection_pos, 15);
+        ofFill();
         ofDrawCircle(selection_pos, 5);
+    }
+    if (selection2_pos.x != -1 && selection2_pos.y != -1) {
+        ofNoFill();
+        ofSetColor(ofColor::aliceBlue);
+        ofDrawCircle(selection2_pos, 15);
+        ofFill();
+        ofDrawCircle(selection2_pos, 5);
+    }
+
+    ofSetColor(ofColor::white);
 
     map_buffer.end();
 
@@ -679,7 +710,7 @@ void ofApp::draw(){
     ofViewport(vPairspace);
     ofSetupScreen();
     // do any drawing for the pairspace below
-    img_temp_pairspace.draw(0, 0, vPairspace.getWidth(), vPairspace.getHeight());
+    //img_temp_pairspace.draw(0, 0, vPairspace.getWidth(), vPairspace.getHeight());
     ofPopView();
     // ========= SELECTION HISTORY ========
     drawViewportOutline(vHistory);
@@ -721,9 +752,9 @@ void ofApp::drawButton(Button *btn, bool colored, bool visible){
 
         // set color
         if (colored) {
-            ofSetColor(ofColor::cyan);
-        } else if (btn->is_label){
-            ofSetColor(ofColor::magenta);
+            ofSetColor(ofColor::lightCoral);
+        //} else if (btn->is_label){
+            //ofSetColor(ofColor::magenta);
         } else {
             ofSetColor(ofColor(255, 255, 255, 150));
         }
@@ -754,11 +785,14 @@ void ofApp::drawButtons() {
 
 
     drawButton(&btn_layers, false, true);
-    drawButton(&btn_layers_none, show_topo >= 3, true);
+    //drawButton(&btn_layers_none, show_topo >= 3, true);
     drawButton(&btn_layers_surface, show_topo == 0, true);
+    drawButton(&btn_layers_divider1, false, true);
     drawButton(&btn_layers_bed, show_topo == 1, true);
+    drawButton(&btn_layers_divider2, false, true);
     drawButton(&btn_layers_thickness, show_topo == 2, true);
     drawButton(&btn_layers_gdop, show_gdop == 0, true);
+    drawButton(&btn_layers_divider3, false, true);
     drawButton(&btn_layers_obscov, show_gdop == 1, true);
 
     drawButton(&btn_mode, false, true);
@@ -977,19 +1011,19 @@ void ofApp::mousePressed(int x, int y, int button){
         // MODEL BUTTONS
         } else if (isButtonClicked(ofVec2f(x, y), &btn_model_vel)) {
             CM.vel_enabled = CM.vel_enabled == 1 ? 0 : 1;
-            plotENU.refreshData(0.1f, 0.f, 1000.f, 0, 0);
+            plotENU.refreshData(0.1f, 0.f, 500.f, 0, 0);
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_model_p1)) {
             CM.p1_enabled = CM.p1_enabled == 1 ? 0 : 1;
-            plotENU.refreshData(0.1f, 0.f, 1000.f, 0, 0);
+            plotENU.refreshData(0.1f, 0.f, 500.f, 0, 0);
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_model_p2)) {
             CM.p2_enabled = CM.p2_enabled == 1 ? 0 : 1;
-            plotENU.refreshData(0.1f, 0.f, 1000.f, 0, 0);
+            plotENU.refreshData(0.1f, 0.f, 500.f, 0, 0);
             reset_selection = false;
         } else if (isButtonClicked(ofVec2f(x, y), &btn_model_p3)) {
             CM.p3_enabled = CM.p3_enabled == 1 ? 0 : 1;
-            plotENU.refreshData(0.1f, 0.f, 1000.f, 0, 0);
+            plotENU.refreshData(0.1f, 0.f, 500.f, 0, 0);
             reset_selection = false;
         // FLOW OPTIONS BUTTONS
         } else if (WM.worm_size == 2 && isButtonClicked(ofVec2f(x, y), &btn_options_small)) {
@@ -1039,7 +1073,7 @@ void ofApp::mousePressed(int x, int y, int button){
                             selection_pos.set((x - position.x) / map_zoom, (y - position.y) / map_zoom);
                             is_selection = true;
                             reset_selection = false;
-                            plotENU.refreshData(0.1f, 0.f, 1000.f, 0, 0);
+                            plotENU.refreshData(0.1f, 0.f, 500.f, 0, 0);
                             active_tracks.clear();
                             for (it = tracks.begin(), end = tracks.end(); it != end; it++) {
                                 if (it->isClickInTrack(selection_pos.x, selection_pos.y) == true) {// && gui_tracks.getToggle("track " + to_string(it->trackno))) {
@@ -1087,6 +1121,43 @@ void ofApp::mousePressed(int x, int y, int button){
         }
 
     } // end of left-mouse clicks
+
+    // right mouse clicks
+    if (button == 2) {
+        bool reset_selection2 = true; // if we don't click a gui button or somewhere on the map, this remains true
+
+        if (show_worms && reset_selection2 == true) {
+            if (map_mode == 2 && vMap.width > 1) { // need to be in 2D map mode and not in fullscreen for a different view to make selections
+                if (mouse_mode == 1) {
+                    // TODO don't make a selection if a button was clicked..
+                    if (isPointInRect(ofVec2f(x, y), ofVec2f(position.x, position.y), WIDTH * map_zoom, HEIGHT * map_zoom)) {
+                        // check if there's valid data for the point, and if it is undefined there don't make a selection/worm
+                        if (WM.isValidPos((x - position.x)/ map_zoom, (y - position.y) / map_zoom)) {
+                            selection2_pos.set((x - position.x) / map_zoom, (y - position.y) / map_zoom);
+                            is_selection2 = true;
+                            reset_selection2 = false;
+                            plotENU.refreshData(0.1f, 0.f, 500.f, 0, 0);
+                        }
+                    }
+                }
+            } else if (map_mode == 3) {
+                reset_selection2 = false; // don't clear selections while in 3d mode
+            }
+        }
+
+        if (reset_selection2 && mouse_mode == 1) {
+            selection2_pos.set(-1, -1);
+            is_selection2 = false;
+            plotENU.clearData2();
+            // now that there's no selection, we should hide the model and pair plots
+            if (!fullscreen)
+                setViewportSizes();
+        } else {
+            // if a selection has been made we need to make sure we see the model plot
+            if (!fullscreen)
+                setViewportSizes();
+        }
+    } // end of right-mouse clicks
 }
 
 //--------------------------------------------------------------

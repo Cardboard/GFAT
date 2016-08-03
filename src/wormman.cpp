@@ -29,7 +29,7 @@ void WormMan::setup(CompMan* compman, string hname, string vname, ofVec2f p)
     pos.set(ofVec2f(0, 0));
 
     preset = "worms";
-    density_preset = 0;
+    density_preset = 2;
     mode = 0;
     include_up = 0;
     colormode = 0;
@@ -267,7 +267,7 @@ void WormMan::wormPreset(string name) {
                     setWormDensity(0.85);
             }
             setWormLifespan(0);
-            setWormTailSize(1);
+            setWormTailSize(2);
             setWormSpeed(60);
             setOpaque(false);
             setArrowMode(0);
@@ -464,8 +464,8 @@ void WormMan::drawWorms()
             it->begin()->drawArrow(pos);
         } else {
             // draw each individual worm in each array of worms
-            if (it->size() >= 1) {
-                for (w = it->rbegin(); w != it->rend(); w++) {
+            if (it->size() > 1) {
+                for (w = it->rbegin()+1; w != it->rend(); w++) {
                     //if (w->alpha == 255.0)
                     w->draw(pos); // TODO delete pos
                 }

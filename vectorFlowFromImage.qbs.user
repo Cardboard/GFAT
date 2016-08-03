@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 3.6.0, 2016-08-03T00:12:59. -->
+<!-- Written by QtCreator 3.6.0, 2016-08-03T14:09:14. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
-  <value type="QByteArray">{c23fde4f-bfc3-4342-aefe-c646cc43db8f}</value>
+  <value type="QByteArray">{4e23abfa-393b-48b7-991e-80263054f67f}</value>
  </data>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
@@ -60,12 +60,12 @@
   <valuemap type="QVariantMap">
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Desktop</value>
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">Desktop</value>
-   <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">{f6cc99b4-80cc-4ae0-852a-a61caf5f0892}</value>
+   <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">{fb853c4a-7cd5-4ffe-8a19-df7a734d52f9}</value>
    <value type="int" key="ProjectExplorer.Target.ActiveBuildConfiguration">0</value>
    <value type="int" key="ProjectExplorer.Target.ActiveDeployConfiguration">0</value>
    <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">0</value>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/matthew/Projects/C++/build-vectorFlowFromImage-Desktop-Debug</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/matthew/ofprojects/build-vectorFlowFromImage-Desktop-Debug</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -75,7 +75,7 @@
       <value type="bool" key="Qbs.CleanInstallRoot">false</value>
       <valuemap type="QVariantMap" key="Qbs.Configuration">
        <value type="QString" key="qbs.buildVariant">debug</value>
-       <value type="QString" key="qbs.profile">qtc_Desktop_b2f95827</value>
+       <value type="QString" key="qbs.profile">qtc_Desktop_a9c3c654</value>
       </valuemap>
       <value type="bool" key="Qbs.DryKeepGoing">false</value>
       <value type="bool" key="Qbs.DryRun">false</value>
@@ -111,7 +111,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qbs.QbsBuildConfiguration</value>
    </valuemap>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.1">
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/matthew/Projects/C++/build-vectorFlowFromImage-Desktop-Release</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/matthew/ofprojects/build-vectorFlowFromImage-Desktop-Release</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -121,12 +121,12 @@
       <value type="bool" key="Qbs.CleanInstallRoot">false</value>
       <valuemap type="QVariantMap" key="Qbs.Configuration">
        <value type="QString" key="qbs.buildVariant">release</value>
-       <value type="QString" key="qbs.profile">qtc_Desktop_b2f95827</value>
+       <value type="QString" key="qbs.profile">qtc_Desktop_a9c3c654</value>
       </valuemap>
       <value type="bool" key="Qbs.DryKeepGoing">false</value>
       <value type="bool" key="Qbs.DryRun">false</value>
       <value type="bool" key="Qbs.Install">true</value>
-      <value type="int" key="Qbs.MaxJobs">0</value>
+      <value type="int" key="Qbs.MaxJobs">4</value>
       <value type="bool" key="Qbs.ShowCommandLines">false</value>
      </valuemap>
      <value type="int" key="ProjectExplorer.BuildStepList.StepsCount">1</value>
@@ -212,12 +212,12 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">rutfordvis</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">vectorFlowFromImage</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qbs.RunConfiguration:rutfordvis.qtc_Desktop_b2f95827---Qbs.RC.NameSeparator---rutfordvis</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qbs.RunConfiguration:vectorFlowFromImage.qtc_Desktop_a9c3c654---Qbs.RC.NameSeparator---vectorFlowFromImage</value>
     <value type="QString" key="Qbs.RunConfiguration.CommandLineArguments"></value>
     <value type="QString" key="Qbs.RunConfiguration.WorkingDirectory"></value>
-    <value type="QString" key="Qbs.RunConfiguration.WorkingDirectory.default">/home/matthew/Projects/C++/rutfordvis/bin</value>
+    <value type="QString" key="Qbs.RunConfiguration.WorkingDirectory.default">/home/matthew/ofprojects/vectorFlowFromImage/bin</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>

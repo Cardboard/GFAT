@@ -4,21 +4,24 @@ ENUPlot::ENUPlot() {
 
 }
 
-ENUPlot::ENUPlot(CompMan *cm, ofVec2f *pt, string label_plot, string label_x, string label_y) {
+ENUPlot::ENUPlot(CompMan *cm, ofVec2f *pt, ofVec2f *pt2, float *time, string label_plot, string label_x, string label_y) {
     this->cm = cm;
     this->pt = pt;
+    this->pt2 = pt2;
+    this->time = time;
     // setup labels
     this->label_plot = label_plot;
     this->label_x = label_x;
     this->label_y = label_y;
 
     empty = true;
-    font.load("arial.ttf", 8);
+    font.load("fonts/AkzidenzGrotesk-LightSC.otf", 8);
 
     cBackground = ofColor(51);
     cLabels = ofColor(255);
     cNumbers = ofColor(101);
-    cData = ofColor(255);
+    cData = ofColor(ofColor::lightCoral);
+    cData2 = ofColor(ofColor(150));
     cAxes = ofColor(152);
 }
 
@@ -50,6 +53,13 @@ void ENUPlot::clearData(){
     data_n.clear();
     data_u.clear();
     empty = true;
+}
+
+void ENUPlot::clearData2(){
+    data_e2.clear();
+    data_n2.clear();
+    data_u2.clear();
+    empty2 = true;
 }
 
 // (re)compute data using a specified step, range of x-values, and tick scales
@@ -111,6 +121,63 @@ void ENUPlot::refreshData(float step, float xstart, float xend, float xscale, fl
         }
     empty = false;
     }
+    if (pt2->x != -1 && pt2->y != -1) {
+        // clear the previous data so we can get a fresh start
+        clearData2();
+
+        ENU result;
+
+        // find min & max of data, for each component: E, N, U
+        x_min_e = xstart;
+        x_max_e = xend;
+        x_min_n = xstart;
+        x_max_n = xend;
+        x_min_u = xstart;
+        x_max_u = xend;
+
+        for (float i = xstart; i <= xend; i+= step) {
+            // get value at a selected point
+            result = cm->solveEquation(*pt2, i);
+
+            // EAST
+            if (result.east < y_min_e)
+                y_min_e = result.east;
+            if (result.east > y_max_e)
+                y_max_e = result.east;
+            data_e2.push_back(DataPt(i, result.east));
+
+            // NORTH
+            if (result.north < y_min_n)
+                y_min_n = result.north;
+            if (result.north > y_max_n)
+                y_max_n = result.north;
+            data_n2.push_back(DataPt(i, result.north));
+
+
+            // UP
+            if (result.up < y_min_u)
+                y_min_u = result.up;
+            if (result.up > y_max_u)
+                y_max_u = result.up;
+            data_u2.push_back(DataPt(i, result.up));
+        }
+
+        if (xscale != 0) {
+            this->xscale = xscale;
+        } else {
+            this->xscale = (xend - xstart) / 10; //
+        }
+        if (yscale != 0) {
+            this->yscale_e = yscale;
+            this->yscale_n = yscale;
+            this->yscale_u = yscale;
+        } else {
+            this->yscale_e = abs(y_max_e - y_min_e) / 12.f;
+            this->yscale_n = abs(y_max_n - y_min_n) / 12.f;
+            this->yscale_u = abs(y_max_u - y_min_u) / 12.f;
+        }
+    empty2 = false;
+    }
 }
 
 void ENUPlot::draw() {
@@ -124,15 +191,15 @@ void ENUPlot::draw() {
     font.drawString(label_plot, \
                     rect_plot.x + rect_plot.width/2 - padding_title, rect_plot.y - text_height);
 
-    drawPlot(&rect_data_e, &data_e, x_min_e, x_max_e, y_min_e, y_max_e, yscale_e, "east");
-    drawPlot(&rect_data_n, &data_n, x_min_n, x_max_n, y_min_n, y_max_n, yscale_n, "north");
-    drawPlot(&rect_data_u, &data_u, x_min_u, x_max_u, y_min_u, y_max_u, yscale_u, "up");
+    drawPlot(&rect_data_e, &data_e, &data_e2, x_min_e, x_max_e, y_min_e, y_max_e, yscale_e, "East");
+    drawPlot(&rect_data_n, &data_n, &data_n2, x_min_n, x_max_n, y_min_n, y_max_n, yscale_n, "North");
+    drawPlot(&rect_data_u, &data_u, &data_u2, x_min_u, x_max_u, y_min_u, y_max_u, yscale_u, "Up");
 
     // set the default color back to white
     ofSetColor(255);
 }
 
-void ENUPlot::drawPlot(ofRectangle *rect, vector<DataPt> *data, float x_min, float x_max, float y_min, float y_max, float yscale, string label) {
+void ENUPlot::drawPlot(ofRectangle *rect, vector<DataPt> *data, vector<DataPt> *data2, float x_min, float x_max, float y_min, float y_max, float yscale, string label) {
     // draw inner rectangle bounded by the x and y axes (and their invisible opposites)
     ofSetColor(cBackground);
     ofDrawRectangle(*rect);
@@ -164,18 +231,47 @@ void ENUPlot::drawPlot(ofRectangle *rect, vector<DataPt> *data, float x_min, flo
 
     if (!empty) {
         // draw data & ticks
-        ofSetColor(cData);
-        // -- EAST
         vector<DataPt>::iterator it;
 
         // return ((limitMax - limitMin) * (valueIn - baseMin) / (baseMax - baseMin)) + limitMin;
 
         // draw data points
         for (it = data->begin(); it != data->end(); it++) {
-            ofDrawCircle(rect->x + ((rect->width) * (it->xval - x_min) / (x_max - x_min)), // x
-                         rect->y + ((rect->height) - ((rect->height) * (it->yval - y_min) / (y_max - y_min))), // y
-                         1); // circle size
+            if (round(*time) == round(it->xval)) {
+                ofSetColor(ofColor(100, 100, 255));
+                ofDrawCircle(rect->x + ((rect->width) * (it->xval - x_min) / (x_max - x_min)), // x
+                             rect->y + ((rect->height) - ((rect->height) * (it->yval - y_min) / (y_max - y_min))), // y
+                             2); // circle size
+            } else {
+                ofSetColor(cData);
+                ofDrawCircle(rect->x + ((rect->width) * (it->xval - x_min) / (x_max - x_min)), // x
+                             rect->y + ((rect->height) - ((rect->height) * (it->yval - y_min) / (y_max - y_min))), // y
+                             0.5); // circle size
+            }
         }
+
+        if (!empty2) {
+            // draw data & ticks
+            vector<DataPt>::iterator it;
+
+            // return ((limitMax - limitMin) * (valueIn - baseMin) / (baseMax - baseMin)) + limitMin;
+
+            // draw data points
+            for (it = data2->begin(); it != data2->end(); it++) {
+                if (round(*time) == round(it->xval)) {
+                    ofSetColor(ofColor(200, 200, 50));
+                    ofDrawCircle(rect->x + ((rect->width) * (it->xval - x_min) / (x_max - x_min)), // x
+                                 rect->y + ((rect->height) - ((rect->height) * (it->yval - y_min) / (y_max - y_min))), // y
+                                 2); // circle size
+                } else {
+                    ofSetColor(cData2);
+                    ofDrawCircle(rect->x + ((rect->width) * (it->xval - x_min) / (x_max - x_min)), // x
+                                 rect->y + ((rect->height) - ((rect->height) * (it->yval - y_min) / (y_max - y_min))), // y
+                                 0.5); // circle size
+                }
+            }
+        }
+
 
         // draw ticks and their value labels
         ofSetLineWidth(2);

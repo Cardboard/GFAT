@@ -70,7 +70,7 @@ void Worm::draw(ofVec2f offset)
     */
 
     if (include_up == 1) {
-        float up_scale = max(1.f, 4 * abs(enu.up));
+        float up_scale = max(1.f, 8 * abs(enu.up));
         // don't draw worms that haven't moved at all yet
         if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
             ofSetColor(0, 0, 0, 0);
@@ -89,7 +89,9 @@ void Worm::draw(ofVec2f offset)
             }
 
         }
+        ofNoFill();
         ofDrawCircle(x, y, up_scale * scaled_size);
+        ofFill();
     } else {
         // don't draw worms that haven't moved at all yet
         if (x == startx && y == starty && startenu.east == 9999.0 && startenu.north == 9999.0) {
