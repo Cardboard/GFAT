@@ -34,7 +34,7 @@ void ofApp::setup(){
     *time = 0.0; // starting time
     newtime = *time;
     paused = false;
-    timescale = 50.f;
+    timescale = 10.f;
 
     // setup component manager & components
     CM.setup(SAMPLES, LINES, WIDTH, HEIGHT, 0, 0);
@@ -460,9 +460,9 @@ void ofApp::setupButtons(){
     setupButton(&btn_options_small, "Small", &btn_options_lag.rect, RIGHT, false, 12, 0);
     setupButton(&btn_options_medium, "Medium", &btn_options_lag.rect, RIGHT, false, 6, 0);
     setupButton(&btn_options_large, "Large", &btn_options_lag.rect, RIGHT, false, 12, 0);
-    setupButton(&btn_options_density_low, "Sparse", &btn_options_medium.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_density_med, "Dense", &btn_options_medium.rect, RIGHT, false, 6, 0);
-    setupButton(&btn_options_density_high, "Packed", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_density_low, "Dense", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_density_med, "Denser", &btn_options_medium.rect, RIGHT, false, 6, 0);
+    setupButton(&btn_options_density_high, "Densest", &btn_options_medium.rect, RIGHT, false, 6, 0);
     setupButton(&btn_options_EN, "EN", &btn_options_density_high.rect, RIGHT, false, 8, 0);
     setupButton(&btn_options_ENU, "ENU", &btn_options_density_high.rect, RIGHT, false, 8, 0);
 }
@@ -966,9 +966,11 @@ void ofApp::mousePressed(int x, int y, int button){
         } else if (WM.include_up == 0 && isButtonClicked(ofVec2f(x, y), &btn_options_EN)){
             WM.include_up = WM.include_up == 1 ? 0 : 1;
             WM.refreshWorms(true);
+            reset_selection = false;
         } else if (WM.include_up == 1 && isButtonClicked(ofVec2f(x, y), &btn_options_ENU)){
             WM.include_up = WM.include_up == 0 ? 1 : 0;
             WM.refreshWorms(true);
+            reset_selection = false;
         } else if (WM.mode == 1 && isButtonClicked(ofVec2f(x, y), &btn_options_eul)) {
             WM.setMode(0);
             if (WM.preset == "disp" && WM.mode == 0) WM.preset = "worms";
