@@ -28,7 +28,28 @@ The sample data is in binary utm format (add more here). It is important to know
 
 #### Flow Equation:
 The sample dataset uses a simple flow model with one secular velocity component and 3 periodic components. These components are assumed to be sinusoidal, and the phase and amplitude information of each component carry the nomeclature SinPhz# and SinAmp# respectively throughout the model reconstruction code.  Data for each of these components are further decomposed into East, North, and Up subcomponents.
-<insert latex of flow equation>
+```
+ // solve for east component
+ result_e = vel_e + \
+         p1_enabled * (amp1_e * sin((2 * M_PI / period_1) * t + phz1_e)) + \
+         p2_enabled * (amp2_e * sin((2 * M_PI / period_2) * t + phz2_e)) + \
+         p3_enabled * (amp3_e * sin((2 * M_PI / period_3) * t + phz3_e));
+
+ // solve for north component
+ result_n = vel_n + \
+         p1_enabled * (amp1_n * sin((2 * M_PI / period_1) * t + phz1_n)) + \
+         p2_enabled * (amp2_n * sin((2 * M_PI / period_2) * t + phz2_n)) + \
+         p3_enabled * (amp3_n * sin((2 * M_PI / period_3) * t + phz3_n));
+         
+ // solve for up component
+ result_u = vel_u + \
+         p1_enabled * (amp1_u * sin((2 * M_PI / period_1) * t + phz1_u)) + \
+         p2_enabled * (amp2_u * sin((2 * M_PI / period_2) * t + phz2_u)) + \
+         p3_enabled * (amp3_u * sin((2 * M_PI / period_3) * t + phz3_u));
+         
+ // aggregate components into EastNorthUp object to drive flow viz + plots
+ ENU u(result_e, result_n, result_u);
+```
 This equation can be modified in the `solveEquation` methods in `CompMan.cpp`, which is the component manager class that aggregates the required data from the input components to drive the flow representation on the topology as well as the plots.
 
 #### Topography:
