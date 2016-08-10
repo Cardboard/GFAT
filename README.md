@@ -12,7 +12,7 @@ So far this code has been tested on XUbuntu 14.x and OSX 10.10.5
 1. Make sure openFrameworks is installed. Learn how to do that [here](http://openframeworks.cc/download/)
 1. Install the DatGui oF addon. Find that [here](https://github.com/braitsch/ofxDatGui)
 1. Using the oF projectGenerator, create a new project with the DatGui addon
-1. Add all the files in this repo to the source folder. Add all the data to the data folder
+1. Add all the files in this repo to the source folder. Add all the data to the `bin\data` folder
 1. In Build Settings, make sure the following files are added to the build target
  <insert pic of XCode build settings>
 1. Build and Run!
