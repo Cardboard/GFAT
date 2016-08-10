@@ -22,6 +22,20 @@ So far this code has been tested on XUbuntu 14.x and OSX 10.10.5
 ## Usage
 
 ### Data Loading
-Since this tool is still a prototype its sample dataset is hardcoded into the source, but with a little understanding of how the velocity component model is put together, other datasets can be swapped in
+Since this tool is still a prototype its sample dataset is hardcoded into the source, but with a little understanding of how the velocity component model is put together, other datasets can be swapped in.
+
+The sample data is in binary utm format (add more here). It is important to know that all topographically distributed data is reprojected into cartesian space! If you want to swap in a new dataset make sure it is in cartesian coordinates.
+
+#### Flow Equation:
+The sample dataset uses a simple flow model with one secular velocity component and 3 periodic components. These components are assumed to be sinusoidal, and the phase and amplitude information of each component carry the nomeclature SinPhz# and SinAmp# respectively throughout the model reconstruction code.  Data for each of these components are further decomposed into East, North, and Up subcomponents.
+<insert latex of flow equation>
+This equation can be modified in the `solveEquation` methods in `CompMan.cpp`, which is the component manager class that aggregates the required data from the input components to drive the flow representation on the topology as well as the plots.
+
+#### Topography:
+The sample topography provided is the Rutford Glacier. In the `setup()` method found in `ofApp.cpp`, there are 3 layers of topography provided: the glacier bed, the surface, and the ice thickness. 
+<insert pic of ofApp setup topo>
+For the 3d view, the surface topography is utilized as a heightmap. Theoretically other topography can be swapped out without issue as long as all 3 layers are provided, but other resolutions have not been performance tested. Geographic measures of model confidence have also been integrated as topographic layers. GDOP and OBSCOV have been hardcoded for the sample, and are treated the same as the ice surface, thickness, and bed layers.
+
+### Menu Options
 
 
