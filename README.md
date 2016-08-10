@@ -50,7 +50,7 @@ The sample dataset uses a simple flow model with one secular velocity component 
  // aggregate components into EastNorthUp object to drive flow viz + plots
  ENU u(result_e, result_n, result_u);
 ```
-This equation can be modified in the `solveEquation` methods in `CompMan.cpp`, which is the component manager class that aggregates the required data from the input components to drive the flow representation on the topology as well as the plots.
+This equation can be modified in the `solveEquation()` methods in `CompMan.cpp`, which is the component manager class that aggregates the required data from the input components to drive the flow representation on the topology as well as the plots.
 
 #### Topography:
 The sample topography provided is the Rutford Glacier. In the `setup()` method found in `ofApp.cpp`, there are 3 layers of topography defined: the glacier bed, the surface, and the ice thickness.
