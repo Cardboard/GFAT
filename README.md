@@ -32,9 +32,14 @@ The sample dataset uses a simple flow model with one secular velocity component 
 This equation can be modified in the `solveEquation` methods in `CompMan.cpp`, which is the component manager class that aggregates the required data from the input components to drive the flow representation on the topology as well as the plots.
 
 #### Topography:
-The sample topography provided is the Rutford Glacier. In the `setup()` method found in `ofApp.cpp`, there are 3 layers of topography provided: the glacier bed, the surface, and the ice thickness. 
+The sample topography provided is the Rutford Glacier. In the `setup()` method found in `ofApp.cpp`, there are 3 layers of topography defined: the glacier bed, the surface, and the ice thickness.
+```
+img_topo_bed.load("bedmap2_bed_rutford.png");
+img_topo_surface.load("bedmap2_surface_rutford.png");
+img_topo_thickness.load("bedmap2_thickness_rutford.png");
+```
 <insert pic of ofApp setup topo>
-For the 3d view, the surface topography is utilized as a heightmap. Theoretically other topography can be swapped out without issue as long as all 3 layers are provided, but other resolutions have not been performance tested. Geographic measures of model confidence have also been integrated as topographic layers. GDOP and OBSCOV have been hardcoded for the sample, and are treated the same as the ice surface, thickness, and bed layers.
+For the 3d view, the surface topography is doubly utilized as a heightmap. Theoretically other topography can be swapped out without issue as long as all 3 layers are provided, but other resolutions have not been performance tested. Geographic measures of model confidence have also been integrated as topographic layers. GDOP and OBSCOV have been hardcoded for the sample, and are treated the same as the ice surface, thickness, and bed layers.
 
 ### Menu Options
 
