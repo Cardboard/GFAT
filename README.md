@@ -38,9 +38,22 @@ img_topo_bed.load("bedmap2_bed_rutford.png");
 img_topo_surface.load("bedmap2_surface_rutford.png");
 img_topo_thickness.load("bedmap2_thickness_rutford.png");
 ```
-<insert pic of ofApp setup topo>
+
 For the 3d view, the surface topography is doubly utilized as a heightmap. Theoretically other topography can be swapped out without issue as long as all 3 layers are provided, but other resolutions have not been performance tested. Geographic measures of model confidence have also been integrated as topographic layers. GDOP and OBSCOV have been hardcoded for the sample, and are treated the same as the ice surface, thickness, and bed layers.
 
 ### Menu Options
+The menu is pretty self explanatory and is primarily toggle based. There are controls both for the flow and the topography available in the same menu.
+
+#### Flow Options:
+* Toggle on/off model components
+* Brush mode: draw flow worms/streamlines onto the topography
+* Selection mode: view decomposition plots of up to 2 selected areas (left click to select point 1, right click to select point 2)
+* Flow representation options: worms, streamlines, dots
+* Flow sampling options: lagrangian, eulerian
+
+#### Topography Options:
+* Toggle between 2D/3D
+* Toggle on/off topography layers (surface, ice thickness, bed)
+* Toggle on/off model confidence layers (GDOP, OBSCOV)
 
 
