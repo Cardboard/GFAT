@@ -17,7 +17,16 @@ So far this code has been tested on XUbuntu 14.x and OSX 10.10.5
 ![Build Settings](images/buildsettings.png)
 1. Build and Run!
 
-###Linux
+###Linux (Ubuntu/Debian with Qt Creator)
+1. Download OpenFrameworks from here (http://openframeworks.cc/download/) and install it by running:
+ 2. cd <of_directory>/scripts/linux/ubuntu
+ 2. sudo  ./install_dependencies.sh
+ 2. cd <of_directory>/scripts/linux
+ 2. ./compileOF.sh -j3
+1. Now we're ready to download Qt Creator, which you can do so from here (http://download.qt.io/official_releases/qtcreator/3.6/3.6.0/). Then configure openFrameworks to work with Qt Creator by navigating to <of_directory>/scripts/qtcreator and running install_template.sh
+1. Download the ofxDatGui openFrameworks addon from here (https://github.com/braitsch/ofxDatGui) and place it in the openFrameworks addon directory => <of_directory>/addons/ofxDatGui
+1. Open Qt Creator, select "File > New Project > openFrameworks > Import an existing Application", and then set the Project path to the datavis prototype's directory. Then you may have to tell Qt Creator where you have installed openFrameworks. The project is already using Git, so simply click Finish.
+1. Click "Build > Run" or press Ctrl+R to build and run the project!
 
 ## Usage
 
